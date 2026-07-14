@@ -10,13 +10,15 @@
 - D-007: 返金はStripe Refund APIを管理画面から実行
 - D-008: スタックはReact/Vite + Supabase(PostgreSQL, RLS, Auth) + Stripe(test mode)
 - D-009: 開発体制は予約アプリと同じ三者体制（PO/設計/CC）を流用
+- D-010: 管理者アカウントはSupabaseダッシュボードのAuthentication→Usersで「Create new user」を使い手動作成する。自己登録経路は一切存在しない。作成後、SQL Editorで profiles.role を 'admin' に手動更新する運用とする
 
 ## 現在フェーズ
-要件定義完了。次: テーブル設計・RLS設計
+認証基盤構築完了（profilesテーブル・RLS・トリガー・ルーティング・RequireAdminガード）。管理者アカウント1件作成済み・動作確認済み
 
 ## 未確定
-- テーブル設計（products / orders / order_items / users / downloads等）
-- RLSポリシー詳細
+- テーブル設計（products / orders / order_items / downloads等）
+- RLSポリシー詳細（products / orders / order_items / downloads等）
 
 ## 変更ログ
 - 2026-07-14: 仕様確定（D-001〜D-009）、プロジェクト初期化
+- 2026-07-14: 認証基盤構築（feature/auth-role-separationブランチ）。profilesテーブル・RLS・トリガーのマイグレーション作成、src/lib/auth.js（getUserRole/isAdmin）、/login・/register・/admin/login・/admin/*ルーティング、RequireAdminガード実装。SQL EditorでDBマイグレーション適用、Authentication→Usersで管理者アカウント（shota.48@icloud.com）作成しrole='admin'に更新、動作確認済み。D-010追加
