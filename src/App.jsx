@@ -9,6 +9,7 @@ import ProductForm from './pages/admin/ProductForm.jsx'
 import ProductListPage from './pages/ProductListPage.jsx'
 import ProductDetailPage from './pages/ProductDetailPage.jsx'
 import CartPage from './pages/CartPage.jsx'
+import CheckoutSuccessPage from './pages/CheckoutSuccessPage.jsx'
 import { useCart } from './contexts/CartContext.jsx'
 
 function Header() {
@@ -29,6 +30,7 @@ function App() {
         <Route path="/" element={<ProductListPage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />

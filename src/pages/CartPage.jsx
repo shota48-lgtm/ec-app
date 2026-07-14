@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useCart } from '../contexts/CartContext'
 import { getProduct } from '../lib/products'
+import { createCheckoutSession } from '../lib/checkout'
 
 function CartPage() {
   const { items, updateQuantity, removeFromCart } = useCart()
   const [products, setProducts] = useState({})
   const [error, setError] = useState(null)
+  const [checkingOut, setCheckingOut] = useState(false)
 
   useEffect(() => {
     if (items.length === 0) {
@@ -31,6 +33,17 @@ function CartPage() {
     const product = products[item.productId]
     return product ? sum + product.price * item.quantity : sum
   }, 0)
+
+  async function handleCheckout() {
+    setError(null)
+    setCheckingOut(true)
+    try {
+      await createCheckoutSession(items)
+    } catch (err) {
+      setError(err.message)
+      setCheckingOut(false)
+    }
+  }
 
   return (
     <div>
@@ -77,8 +90,9 @@ function CartPage() {
         </table>
       )}
       <p>合計: {total}円</p>
-      <button type="button" disabled>
-        レジに進む（準備中）
+      {error && <p role="alert">{error}</p>}
+      <button type="button" onClick={handleCheckout} disabled={items.length === 0 || checkingOut}>
+        {checkingOut ? '処理中...' : 'レジに進む'}
       </button>
     </div>
   )
