@@ -5,6 +5,8 @@ import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import AdminLoginPage from './pages/admin/AdminLoginPage.jsx'
 import AdminDashboard from './pages/admin/AdminDashboard.jsx'
+import ProductList from './pages/admin/ProductList.jsx'
+import ProductForm from './pages/admin/ProductForm.jsx'
 
 function App() {
   return (
@@ -17,7 +19,12 @@ function App() {
         path="/admin/*"
         element={
           <RequireAdmin>
-            <AdminDashboard />
+            <Routes>
+              <Route index element={<AdminDashboard />} />
+              <Route path="products" element={<ProductList />} />
+              <Route path="products/new" element={<ProductForm />} />
+              <Route path="products/:id/edit" element={<ProductForm />} />
+            </Routes>
           </RequireAdmin>
         }
       />

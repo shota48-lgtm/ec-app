@@ -1,7 +1,10 @@
+import { Link } from 'react-router-dom'
+
 function AdminDashboard() {
   return (
     <div>
       <h1>管理者ダッシュボード</h1>
+      <Link to="/admin/products">商品管理</Link>
     </div>
   )
 }
