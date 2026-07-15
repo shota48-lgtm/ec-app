@@ -20,16 +20,16 @@
 - D-017: 商品画像はSupabase Storageの公開バケット`product-images`に保存し、products.image_url（既存カラム）へ公開URLを保存する方式とする。バケットへのinsert/update/deleteはprofiles.role='admin'のみ許可するRLSポリシーを付与、読み取りは公開バケットのためRLSを介さず公開URLで配信。SQL内容は事前にとーふへ提示し承認を得てからSQL Editorで手動実行する運用
 
 ## 現在フェーズ
-3本のfeatureブランチ（feature/stripe-webhook・feature/ui-polish・feature/product-images）をmainへ順次マージ中。
+3本のfeatureブランチ（feature/stripe-webhook・feature/ui-polish・feature/product-images）すべてをmainへマージ完了。
 
 - feature/stripe-webhook → main: マージ済み（--no-ffマージコミット、コンフリクトなし）
 - feature/ui-polish → main: マージ済み（--no-ffマージコミット、STATE.mdのみコンフリクトが発生し完全差替版で解消。コードファイルは自動マージ）
-- feature/product-images → main: 未マージ（次のステップ）
+- feature/product-images → main: マージ済み（--no-ffマージコミット、STATE.mdのみコンフリクトが発生し完全差替版で解消。コードファイルは自動マージ）
 
-feature/product-imagesのマージが完了すれば、Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロードの3機能がすべてmainに揃う。リモートへのpushはまだ実施していない。
+Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロードの3機能がすべてmainに揃った状態。リモートへのpushはまだ実施していない（別途指示待ち）。
 
 ## 未確定
-- feature/product-imagesのmainへのマージ（このマージ完了後に対応）
+- リモートへのpush（別途指示待ち）
 - 権利付与（ダウンロードURL発行）・downloadsテーブルへの書き込み・Stripe Refund APIによる返金処理
 - モバイル幅でのレスポンシブ表示は、この開発環境ではブラウザ自動リサイズが機能しないため未検証（Tailwindのflex-wrap/gridブレークポイントで対応実装済みだが、とーふによる実機/手動リサイズでの目視確認が必要）
 - 管理者用商品CRUD画面（一覧・フォーム）自体はui-polishのデザイン統一の対象外のまま（顧客向け画面のみ実施）
@@ -43,5 +43,5 @@ feature/product-imagesのマージが完了すれば、Stripe Webhook・顧客�
 - 2026-07-15: Stripe Checkout Session連携構築（feature/checkout-sessionブランチ）。supabase/functions/create-checkout-session/index.ts実装（サーバー側での価格・is_active再検証、orders/order_items作成、Stripe Checkout Session作成）、src/lib/checkout.js（createCheckoutSession）、CartPageの「レジに進む」有効化、CheckoutSuccessPage.jsx・/checkout/successルーティング追加。npx supabase login・link・secrets set・functions deployを実施しデプロイ完了。とーふがテストカードで決済完了まで動作確認済み。D-014追加
 - 2026-07-15: Stripe Webhook受信構築（feature/stripe-webhookブランチ）。supabase/functions/stripe-webhook/index.ts実装（stripe-signatureヘッダーによる署名検証、webhook_eventsテーブルによる冪等性処理、該当orderのstatusをpaidに更新）、supabase/migrations/にwebhook_eventsテーブル作成SQLを作成（SQL Editorで手動実行済み）、supabase/config.tomlでstripe-webhookのverify_jwt=falseを設定。デプロイ後、STRIPE_WEBHOOK_SECRETの署名検証が繰り返し失敗するインシデントが発生。値そのものを出力しない診断用Edge Functionで切り分けた結果、PowerShellの `Read-Host -AsSecureString` へのクリップボード貼り付けで値が1文字に欠損する不具合が原因と判明。`Get-Clipboard` 方式に切り替えて解決し、STRIPE_SECRET_KEY・STRIPE_WEBHOOK_SECRETとも正しい値で再設定済み。実際の決済(session: cs_test_a189R7aVciBp0GGV1qZR1ZjZwQDcdU3GL6YEochFx3OefQ9VpxCKuoyn6o)でordersのstatusがpending→paidに更新されることを確認済み。D-015追加
 - 2026-07-15: 顧客向け画面デザイン統一（feature/ui-polishブランチ、mainから分岐）。配色・フォント・ボタンスタイルの方針をとーふに提示し承認取得後に着手。D-016のデザイントークンをsrc/index.cssに追加（アクセントカラーCSS変数、Noto Sans JP、.btn-primary/.btn-outline/.btn-text/.cardユーティリティ、ダークモード対応）。App.jsxのHeaderをsticky化しロゴ・カート件数バッジ追加。ProductListPage（商品カードグリッド、ローディング/空/エラー状態）→CartPage（カード形式のカート行、削除をテキストリンク化、合計・レジに進むをカード化）の順で実装し、とーふに確認を挙げてから残り3ページに展開。ProductDetailPage・LoginPage・CheckoutSuccessPageにも同様のカード/ボタンスタイルを適用。全5ページをブラウザ(Claude in Chrome)でデスクトップ幅の目視確認済み。モバイル幅リサイズがこの開発環境で機能しないため、レスポンシブの実機確認はとーふが別途実施予定
-- 2026-07-15: 商品画像アップロード機能構築（feature/product-imagesブランチ、feature/ui-polishから分岐）。products.image_urlカラムは既存のため追加マイグレーション不要と判断。Supabase Storage公開バケット`product-images`作成・admin限定RLSポリシー（insert/update/delete）のSQLをとーふに事前提示し承認を得てからSQL Editorで実行（supabase/migrations/20260715120000_create_product_images_storage.sqlにも保存）。src/lib/storage.js（uploadProductImage）実装、ProductForm.jsxの「画像URL」テキスト欄をファイル選択+アップロード中表示+プレビューに置き換え。ブラウザで実際にファイルをアップロードしStorageへの保存・公開URL取得・商品一覧/詳細ページでの画像表示までとーふ立会いのもと動作確認済み。テストで作成した商品データはとーふが削除済み。D-017追加
-- 2026-07-15: feature/stripe-webhook・feature/ui-polish・feature/product-imagesの3ブランチをmainへ順次マージ開始。stripe-webhook→mainはコンフリクトなし。ui-polish→mainはSTATE.mdのみコンフリクトが発生し、両ブランチの内容（D-015〜D-016、未確定事項、変更ログ）を漏れなく統合した完全差替版で解消。product-imagesのマージは次のステップ
+- 2026-07-15: 商品画像アップロード機能構築（feature/product-imagesブランチ、feature/ui-polishから分岐）。products.image_urlカラムは既存のため追加マイグレーション不要と判断。Supabase Storage公開バケット`product-images`作成・admin限定RLSポリシー（insert/update/delete）のSQLをとーふに事前提示し承認を得てからSQL Editorで実行（supabase/migrations/20260715120000_create_product_images_storage.sqlにも保存）。src/lib/storage.js（uploadProductImage）実装、ProductForm.jsxの「画像URL」テキスト欄をファイル選択+アップロード中表示+プレビューに置き換え。ブラウザで実際にファイルをアップロードしStorageへの保存・公開URL取得・商品一覧/詳細ページでの画像表示までとーふ立会いのもと動作確認済み。管理者ログインはとーふが自身で実施（CCはパスワード入力を代行しない運用）。テストで作成した商品データはとーふが削除済み。D-017追加
+- 2026-07-15: feature/stripe-webhook・feature/ui-polish・feature/product-imagesの3ブランチをmainへ順次マージ（指示された順序: stripe-webhook→ui-polish→product-images）。各マージとも--no-ffで実施。stripe-webhook→mainはコンフリクトなし。ui-polish→main、product-images→mainはいずれもSTATE.mdのみコンフリクトが発生し、両側の内容（確定事項・現在フェーズ・未確定・変更ログ）を漏れなく反映した完全差替版で解消、コードファイルはすべて自動マージ。リモートへのpushは未実施
