@@ -21,18 +21,17 @@
 - D-018: /admin/loginがfeature/ui-polishのデザイン統一漏れだったため、feature/admin-login-polishブランチで個別に対応。src/index.cssに.form-label・.form-inputユーティリティを新規追加（枠線色は既存の--borderではなく--text-mutedを採用。理由: --borderはカード罫線用の薄い色で、入力欄の視認性要件を満たさないため）。フォーカス時は--accentのボーダー色＋--accent-bgのリング（box-shadow）で明示。フォーム全体を.cardで囲み、ラベルを上に配置しつつプレースホルダーは補助的な入力例（admin@example.com / 8文字以上）にとどめる構成とした。ボタンは.btn-primaryに統一
 
 ## 現在フェーズ
-3本のfeatureブランチ（feature/stripe-webhook・feature/ui-polish・feature/product-images）すべてをmainへマージ完了。加えて、feature/ui-polishで漏れていた/admin/loginのデザイン統一をfeature/admin-login-polishブランチで実施中（mainへの未マージ）。
+4本のfeatureブランチ（feature/stripe-webhook・feature/ui-polish・feature/product-images・feature/admin-login-polish）すべてをmainへマージ完了。
 
 - feature/stripe-webhook → main: マージ済み（--no-ffマージコミット、コンフリクトなし）
 - feature/ui-polish → main: マージ済み（--no-ffマージコミット、STATE.mdのみコンフリクトが発生し完全差替版で解消。コードファイルは自動マージ）
 - feature/product-images → main: マージ済み（--no-ffマージコミット、STATE.mdのみコンフリクトが発生し完全差替版で解消。コードファイルは自動マージ）
-- feature/admin-login-polish: 作業完了、ブラウザ(Claude in Chrome)でダークモード・ライトモード双方の目視確認済み。mainへのマージは指示待ち（未実施）
+- feature/admin-login-polish → main: マージ済み（--no-ffマージコミット、コンフリクトなし）。とーふがブラウザで/admin/loginの見た目を確認しマージを指示
 
-Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロードの3機能がすべてmainに揃った状態。リモートへのpushはまだ実施していない（別途指示待ち）。
+Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロード・管理者ログイン画面のデザイン統一の4機能がすべてmainに揃った状態。リモートへのpushはまだ実施していない（別途指示待ち）。
 
 ## 未確定
 - リモートへのpush（別途指示待ち）
-- feature/admin-login-polish → mainのマージ（指示待ち）
 - 権利付与（ダウンロードURL発行）・downloadsテーブルへの書き込み・Stripe Refund APIによる返金処理
 - モバイル幅でのレスポンシブ表示は、この開発環境ではブラウザ自動リサイズが機能しないため未検証（Tailwindのflex-wrap/gridブレークポイントで対応実装済みだが、とーふによる実機/手動リサイズでの目視確認が必要）
 - 管理者用商品CRUD画面（一覧・フォーム）自体はデザイン統一の対象外のまま（顧客向け画面と管理者ログインのみ実施）
@@ -48,4 +47,5 @@ Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロ
 - 2026-07-15: 顧客向け画面デザイン統一（feature/ui-polishブランチ、mainから分岐）。配色・フォント・ボタンスタイルの方針をとーふに提示し承認取得後に着手。D-016のデザイントークンをsrc/index.cssに追加（アクセントカラーCSS変数、Noto Sans JP、.btn-primary/.btn-outline/.btn-text/.cardユーティリティ、ダークモード対応）。App.jsxのHeaderをsticky化しロゴ・カート件数バッジ追加。ProductListPage（商品カードグリッド、ローディング/空/エラー状態）→CartPage（カード形式のカート行、削除をテキストリンク化、合計・レジに進むをカード化）の順で実装し、とーふに確認を挙げてから残り3ページに展開。ProductDetailPage・LoginPage・CheckoutSuccessPageにも同様のカード/ボタンスタイルを適用。全5ページをブラウザ(Claude in Chrome)でデスクトップ幅の目視確認済み。モバイル幅リサイズがこの開発環境で機能しないため、レスポンシブの実機確認はとーふが別途実施予定
 - 2026-07-15: 商品画像アップロード機能構築（feature/product-imagesブランチ、feature/ui-polishから分岐）。products.image_urlカラムは既存のため追加マイグレーション不要と判断。Supabase Storage公開バケット`product-images`作成・admin限定RLSポリシー（insert/update/delete）のSQLをとーふに事前提示し承認を得てからSQL Editorで実行（supabase/migrations/20260715120000_create_product_images_storage.sqlにも保存）。src/lib/storage.js（uploadProductImage）実装、ProductForm.jsxの「画像URL」テキスト欄をファイル選択+アップロード中表示+プレビューに置き換え。ブラウザで実際にファイルをアップロードしStorageへの保存・公開URL取得・商品一覧/詳細ページでの画像表示までとーふ立会いのもと動作確認済み。管理者ログインはとーふが自身で実施（CCはパスワード入力を代行しない運用）。テストで作成した商品データはとーふが削除済み。D-017追加
 - 2026-07-15: feature/stripe-webhook・feature/ui-polish・feature/product-imagesの3ブランチをmainへ順次マージ（指示された順序: stripe-webhook→ui-polish→product-images）。各マージとも--no-ffで実施。stripe-webhook→mainはコンフリクトなし。ui-polish→main、product-images→mainはいずれもSTATE.mdのみコンフリクトが発生し、両側の内容（確定事項・現在フェーズ・未確定・変更ログ）を漏れなく反映した完全差替版で解消、コードファイルはすべて自動マージ。リモートへのpushは未実施
-- 2026-07-16: /admin/loginのデザイン統一漏れに対応（feature/admin-login-polishブランチ、mainから分岐）。src/index.cssに.form-label・.form-input（枠線=--text-muted、フォーカス時に--accentボーダー＋--accent-bgリング）を新規追加。AdminLoginPage.jsxをフォーム全体.cardで囲み、メールアドレス・パスワード入力欄にラベル+form-input適用（プレースホルダーはadmin@example.com／8文字以上の補助例に変更）、ボタンを.btn-primaryに統一。ブラウザ(Claude in Chrome)でダークモード・ライトモード双方、通常時・フォーカス時の見た目を目視確認済み。D-018追加。mainへのマージは指示待ち
+- 2026-07-16: /admin/loginのデザイン統一漏れに対応（feature/admin-login-polishブランチ、mainから分岐）。src/index.cssに.form-label・.form-input（枠線=--text-muted、フォーカス時に--accentボーダー＋--accent-bgリング）を新規追加。AdminLoginPage.jsxをフォーム全体.cardで囲み、メールアドレス・パスワード入力欄にラベル+form-input適用（プレースホルダーはadmin@example.com／8文字以上の補助例に変更）、ボタンを.btn-primaryに統一。ブラウザ(Claude in Chrome)でダークモード・ライトモード双方、通常時・フォーカス時の見た目を目視確認済み。D-018追加
+- 2026-07-16: とーふが/admin/loginの見た目を確認しfeature/admin-login-polish→mainのマージを指示。--no-ffでマージ、コンフリクトなし。リモートへのpushは未実施
