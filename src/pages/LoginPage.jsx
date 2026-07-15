@@ -22,7 +22,7 @@ function LoginPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="card max-w-sm mx-auto p-6 flex flex-col gap-3">
       <h1>ログイン</h1>
       <input
         type="email"
@@ -30,6 +30,7 @@ function LoginPage() {
         onChange={(e) => setEmail(e.target.value)}
         placeholder="メールアドレス"
         required
+        className="border border-[var(--border)] rounded-lg px-3 py-2 bg-[var(--bg)] text-[var(--text-h)]"
       />
       <input
         type="password"
@@ -37,9 +38,16 @@ function LoginPage() {
         onChange={(e) => setPassword(e.target.value)}
         placeholder="パスワード"
         required
+        className="border border-[var(--border)] rounded-lg px-3 py-2 bg-[var(--bg)] text-[var(--text-h)]"
       />
-      {error && <p role="alert">{error}</p>}
-      <button type="submit">ログイン</button>
+      {error && (
+        <p role="alert" className="text-[var(--danger)]">
+          {error}
+        </p>
+      )}
+      <button type="submit" className="btn-primary">
+        ログイン
+      </button>
     </form>
   )
 }
