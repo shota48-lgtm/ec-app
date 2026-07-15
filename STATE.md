@@ -21,6 +21,7 @@
 - D-018: /admin/loginがfeature/ui-polishのデザイン統一漏れだったため、feature/admin-login-polishブランチで個別に対応。src/index.cssに.form-label・.form-inputユーティリティを新規追加（枠線色は既存の--borderではなく--text-mutedを採用。理由: --borderはカード罫線用の薄い色で、入力欄の視認性要件を満たさないため）。フォーカス時は--accentのボーダー色＋--accent-bgのリング（box-shadow）で明示。フォーム全体を.cardで囲み、ラベルを上に配置しつつプレースホルダーは補助的な入力例（admin@example.com / 8文字以上）にとどめる構成とした。ボタンは.btn-primaryに統一
 - D-019: 権利付与（D-006の具体化、feature/download-deliveryブランチ）。商品ファイル本体はSupabase Storageの新規非公開バケット`product-files`に保存し、products.file_pathへバケット内パス（公開URLではない）を保存。downloadsテーブルは既存スキーマ（order_item_id/download_token/expires_at/downloaded_at）をそのまま採用し再設計はしなかった。stripe-webhookがcheckout.session.completedでorderをpaidに更新した直後、該当order_items全件に対しdownloads行を発行（expires_at=発行時刻+30日、これがダウンロード権利＝エンタイトルメントの有効期限）。実ファイル転送用の署名URL（storage.createSignedUrl、60秒）は、新設のget-download-url Edge Functionが購入者のダウンロードボタン押下時点で都度発行する2段構成とした。get-checkout-downloads（/checkout/successから呼び出し、stripe_session_idを渡してそのorderの購入商品＋download_token一覧を返す）・get-download-url（download_tokenを渡して署名URLを返す）はいずれもログイン状態に依存しない設計（service_role経由でdownloadsテーブルのRLSをバイパス）。理由: create-checkout-sessionの実装を確認した結果、チェックアウト自体は既にログイン必須と判明したが、Stripeホスト決済画面を経由して/checkout/successに戻ってくる時点でブラウザのSupabaseセッションが必ず生きている保証はできないため、決済直後にログイン壁を作らない設計をとーふと合意。downloadsテーブルの既存RLS（本人のみselect）は、将来の/orders会員ページ（RLS経由でログイン中ユーザーが直接参照する経路）用として温存する
 - D-020: モバイル実機確認で判明した不具合の修正（feature/login-redirect-fixブランチ）。/cartで非ログイン状態のまま「レジに進む」を押すと「ログインが必要です」という文言のみが表示され、/loginへの導線が存在しなかった（機能欠落）。CartPage.jsxのhandleCheckoutを、レジ進む押下時にsupabase.auth.getSession()で先にログイン状態をチェックする方式に変更し、未ログイン時は.btn-primaryスタイルの「ログインする」ボタン（Link to="/login" state={{from: '/cart'}}）を表示するよう修正。LoginPage.jsxはlocation.state.fromがあればログイン成功後にそこへnavigateするよう変更（未指定時は従来通り'/'）。デスクトップブラウザに加え、この開発環境ではブラウザの自動リサイズがビューポート幅に反映されない制約があるため、390px/320px幅のiframeを注入してモバイル幅相当でのレンダリング・タップ操作を検証（ボタンがはみ出さず・隠れずに表示され、flex-wrapにより縦積みに切り替わることを確認）。最終的にとーふがモバイル実機（192.168.11.2経由）でカート→ログイン促進表示→ログイン画面遷移→ログイン→カートに戻る→レジに進む→決済→ダウンロードの全フローを通しで確認し、問題なしと確認済み
+- D-021: 管理者用商品CRUD画面（/admin/products一覧・/admin/products/new・/admin/products/:id/edit）にデザイントークンを適用（feature/admin-crud-polishブランチ）。ui-polish（D-016）実施当初、対象は顧客向け画面のみでこの3画面は範囲外のまま残っていた。一覧ページ: 各商品行を.cardの縦積みリストに変更し、「編集」を.btn-outline、「削除」を.btn-textに統一、「新規登録」を.btn-primaryでh1と並べて配置。フォームページ: フォーム全体を.card（admin/loginと同じmax-w+padding+flex flex-colパターン）で囲み、商品名・説明・価格・商品ファイル・商品画像の各入力欄にlabel.form-label+入力要素.form-inputを適用、「保存」ボタンを.btn-primaryに統一。「公開する」チェックボックスはレイアウトのみ軽く整えるにとどめた（チェックボックス自体の見た目は変更していない）
 
 ## 現在フェーズ
 6本のfeatureブランチ（feature/stripe-webhook・feature/ui-polish・feature/product-images・feature/admin-login-polish・feature/download-delivery・feature/login-redirect-fix）すべてをmainへマージ完了。
@@ -31,14 +32,15 @@
 - feature/admin-login-polish → main: マージ済み（--no-ffマージコミット、コンフリクトなし）。とーふがブラウザで/admin/loginの見た目を確認しマージを指示
 - feature/download-delivery → main: マージ済み（--no-ffマージコミット、コンフリクトなし）。設計案提示・承認（D-019）→実装→Storageバケット作成SQL実行→Edge Functionsデプロイ→とーふが実決済でダウンロードまで動作確認、を経てマージを指示
 - feature/login-redirect-fix → main: マージ済み（--no-ffマージコミット、コンフリクトなし）。/cartでの非ログイン時「レジに進む」導線欠落バグを修正（D-020）。デスクトップ・擬似モバイル幅（iframe検証）・とーふのモバイル実機（購入〜ダウンロードまでの全フロー）で動作確認後、マージを指示
+- feature/admin-crud-polish: 管理者用商品CRUD画面（一覧・新規登録・編集）にデザイントークンを適用（D-021）。とーふがログイン済みブラウザで一覧・新規登録・編集の3画面すべての見た目を確認済み。mainへのマージは指示待ち
 
 Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロード・管理者ログイン画面のデザイン統一・権利付与（ダウンロード発行）・login-redirect-fixの6機能がすべてmainに揃い、GitHubリモート(https://github.com/shota48-lgtm/ec-app.git)へもpush済み。開発検証中に作成されたテスト注文（最初のクリーンアップでorders 10件、feature/login-redirect-fix検証中に生じた分としてさらに2件、いずれもStripeテストモード決済・実売上なし）とその紐づくorder_items・downloadsは削除済みで、注文関連テーブルはクリーンな状態。
 
 ## 未確定
+- feature/admin-crud-polish → mainのマージ（指示待ち）
 - 注文履歴ページ（/orders、D-003会員制の具体化）は今回のスコープ外として持ち越し
 - Stripe Refund APIによる返金処理
 - カート/ログイン/ダウンロードの導線以外のページのモバイル幅レスポンシブ表示は、この開発環境ではブラウザ自動リサイズが機能しないため引き続き未検証（Tailwindのflex-wrap/gridブレークポイントで対応実装済みだが、とーふによる実機での目視確認が必要）
-- 管理者用商品CRUD画面（一覧・フォーム）自体はデザイン統一の対象外のまま（顧客向け画面と管理者ログインのみ実施）
 
 ## 変更ログ
 - 2026-07-14: 仕様確定（D-001〜D-009）、プロジェクト初期化
@@ -62,3 +64,4 @@ Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロ
 - 2026-07-16: feature/login-redirect-fix検証に伴い作成されたテスト注文2件（CCの誤操作分・とーふの実機確認分）をとーふがSQL Editorで削除完了。注文関連テーブルは再びクリーンな状態
 - 2026-07-16: とーふがfeature/login-redirect-fix→mainのマージを指示。--no-ffでマージ、コンフリクトなし（STATE.mdも自動マージ）。push許可を得てgit pushを実施、GitHubへ反映（f09a79c..abf1fa5）。これで6機能すべてがmain・GitHub双方に揃った状態
 - 2026-07-16: README.md（Viteデフォルト雛形のまま放置されていた）を整備。プロジェクト概要・技術スタック・主な機能一覧・セットアップ手順（npm install/.envの設定項目/npm run dev）・ディレクトリ構成を記載。実際のAPIキー等の機密情報は一切含めていない。JUDGMENT_HEURISTICS.mdはJ10・J-XXという欠番・仮番号をJ1・J2の連番に振り直し、各項目を「背景」「対処方針」の統一形式に整理（内容・意味は変更せず体裁のみ整頓）。実装コードには触れていないため、mainへ直接コミット
+- 2026-07-16: 管理者用商品CRUD画面のデザイン統一（feature/admin-crud-polishブランチ、mainから分岐）。ProductList.jsx: <table>を.cardの縦積みリスト（<ul>+<li>）に置き換え、商品名・価格・公開状態を1カードにまとめ「編集」(.btn-outline)・「削除」(.btn-text)を配置、見出し横に「新規登録」(.btn-primary)を配置。ProductForm.jsx: フォーム全体を.card（admin/loginと同じパターン）で囲み、商品名・説明・価格・商品ファイル・商品画像の各入力欄にlabel.form-label+.form-inputを適用、「保存」を.btn-primaryに統一。npm run build成功。とーふがログイン済みブラウザで一覧・新規登録・編集の3画面すべての見た目を確認し「OK」と確認済み。D-021追加。mainへのマージは指示待ち

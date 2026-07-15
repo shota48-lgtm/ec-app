@@ -33,32 +33,38 @@ function ProductList() {
 
   return (
     <div>
-      <h1>商品管理</h1>
-      {error && <p role="alert">{error}</p>}
-      <button onClick={() => navigate('/admin/products/new')}>新規登録</button>
-      <table>
-        <thead>
-          <tr>
-            <th>商品名</th>
-            <th>価格</th>
-            <th>公開状態</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <h1 className="mb-0">商品管理</h1>
+        <button type="button" className="btn-primary" onClick={() => navigate('/admin/products/new')}>
+          新規登録
+        </button>
+      </div>
+      {error && (
+        <p role="alert" className="text-[var(--danger)] mb-4">
+          {error}
+        </p>
+      )}
+      {products.length === 0 && <p className="text-muted">商品が登録されていません</p>}
+      {products.length > 0 && (
+        <ul className="flex flex-col gap-3 list-none p-0 m-0">
           {products.map((product) => (
-            <tr key={product.id}>
-              <td>{product.name}</td>
-              <td>{product.price}</td>
-              <td>{product.is_active ? '公開中' : '非公開'}</td>
-              <td>
-                <Link to={`/admin/products/${product.id}/edit`}>編集</Link>
-                <button onClick={() => handleDelete(product.id)}>削除</button>
-              </td>
-            </tr>
+            <li key={product.id} className="card flex flex-wrap items-center gap-4 p-4">
+              <div className="flex-1 min-w-[160px]">
+                <p className="text-[var(--text-h)] font-medium truncate">{product.name}</p>
+                <p className="text-muted">
+                  {product.price}円 ・ {product.is_active ? '公開中' : '非公開'}
+                </p>
+              </div>
+              <Link to={`/admin/products/${product.id}/edit`} className="btn-outline no-underline">
+                編集
+              </Link>
+              <button type="button" className="btn-text" onClick={() => handleDelete(product.id)}>
+                削除
+              </button>
+            </li>
           ))}
-        </tbody>
-      </table>
+        </ul>
+      )}
     </div>
   )
 }
