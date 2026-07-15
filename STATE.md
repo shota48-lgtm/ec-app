@@ -32,7 +32,7 @@
 - feature/download-delivery → main: マージ済み（--no-ffマージコミット、コンフリクトなし）。設計案提示・承認（D-019）→実装→Storageバケット作成SQL実行→Edge Functionsデプロイ→とーふが実決済でダウンロードまで動作確認、を経てマージを指示
 - feature/login-redirect-fix: /cartでの非ログイン時「レジに進む」導線欠落バグを修正（D-020）。デスクトップ・擬似モバイル幅（iframe検証）・とーふのモバイル実機（購入〜ダウンロードまでの全フロー）で動作確認済み。mainへのマージは指示待ち
 
-Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロード・管理者ログイン画面のデザイン統一・権利付与（ダウンロード発行）の5機能がすべてmainに揃った状態。GitHubリモート(https://github.com/shota48-lgtm/ec-app.git)へmainをpush済み。開発検証中に作成されたテスト注文（orders 10件、すべてStripeテストモード決済・実売上なし）とその紐づくorder_items・downloadsは削除済みで、注文関連テーブルはクリーンな状態。
+Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロード・管理者ログイン画面のデザイン統一・権利付与（ダウンロード発行）の5機能がすべてmainに揃った状態。GitHubリモート(https://github.com/shota48-lgtm/ec-app.git)へmainをpush済み。開発検証中に作成されたテスト注文（最初のクリーンアップでorders 10件、feature/login-redirect-fix検証中に生じた分としてさらに2件、いずれもStripeテストモード決済・実売上なし）とその紐づくorder_items・downloadsは削除済みで、注文関連テーブルはクリーンな状態。
 
 ## 未確定
 - feature/login-redirect-fix → mainのマージ（指示待ち）
@@ -40,7 +40,6 @@ Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロ
 - Stripe Refund APIによる返金処理
 - カート/ログイン/ダウンロードの導線以外のページのモバイル幅レスポンシブ表示は、この開発環境ではブラウザ自動リサイズが機能しないため引き続き未検証（Tailwindのflex-wrap/gridブレークポイントで対応実装済みだが、とーふによる実機での目視確認が必要）
 - 管理者用商品CRUD画面（一覧・フォーム）自体はデザイン統一の対象外のまま（顧客向け画面と管理者ログインのみ実施）
-- feature/login-redirect-fix検証中、CCがログイン済み状態で誤って「レジに進む」を実行しStripe決済画面まで遷移した際にpending状態のテスト注文が1件作成された可能性あり。次回のテストデータクリーンアップ時に合わせて確認・削除が必要
 
 ## 変更ログ
 - 2026-07-14: 仕様確定（D-001〜D-009）、プロジェクト初期化
@@ -61,3 +60,4 @@ Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロ
 - 2026-07-16: GitHubにリモートリポジトリ作成（Private、README/gitignore/licenseなし）。push前に`git ls-files`で.envがgit管理下に含まれていないこと（.env.exampleのみ追跡対象、.gitignoreで除外済み）を確認してから、git remote add origin https://github.com/shota48-lgtm/ec-app.git → git remote -vで確認 → git push -u origin mainを実施。new branch main -> mainで成功
 - 2026-07-16: テストデータのクリーンアップ。ordersの全件一覧・order_items/downloads件数を確認するSQLを提示し、判断材料（Stripeテストモードのためcs_test_接頭辞は判別に使えないこと、created_atとSTATE.md変更ログとの突き合わせ、pending止まりの放棄注文は削除候補として扱いやすいこと）を添えて報告。削除SQLも提示のみに留め、とーふの確認・指示を待ってから実行する運用を徹底。とーふがSQL Editorでordersの全10件（すべてStripeテストモード決済、実売上なし）と紐づくorder_items・downloadsを削除完了。注文関連テーブルはクリーンな状態
 - 2026-07-16: とーふのモバイル実機確認で、/cart非ログイン時「レジに進む」→「ログインが必要です」の文言のみでログイン画面への導線が存在しない不具合が判明（機能欠落、致命的）。feature/login-redirect-fixブランチで対応。CartPage.jsx: handleCheckoutでsupabase.auth.getSession()により事前にログイン状態を確認し、未ログイン時は.btn-primaryの「ログインする」ボタン（Link to="/login" state={{from: '/cart'}}）を表示する方式に変更（create-checkout-session側の401エラーメッセージに文字列一致した場合も同じ表示にフォールバック）。LoginPage.jsx: location.state.fromがあればログイン成功後にそこへnavigateするよう変更。デスクトップブラウザで動作確認したところ、CCがログイン済みのままだったため一度Stripe決済画面まで進んでしまい、テスト用pending注文が1件生成された可能性がある点に注意（次回クリーンアップ時に確認要）。ログアウトして再検証し、「ログインが必要です」＋「ログインする」ボタンの表示・/loginへの遷移を確認。とーふからモバイル幅特有のレイアウト崩れの懸念が挙がったため、resize_windowがこの環境のビューポートに反映されない制約を踏まえ、390px/320px幅のiframeを注入してレンダリングを検証（flex-wrapにより縦積みに切り替わり、はみ出し・非表示なしを確認）。最終的にとーふがモバイル実機で、カート→ログイン促進表示→ログイン画面遷移→ログイン→カートに戻る→レジに進む→決済→ダウンロードの全フローを通しで確認し「問題なし」と報告。D-020追加。mainへのマージは指示待ち
+- 2026-07-16: feature/login-redirect-fix検証に伴い作成されたテスト注文2件（CCの誤操作分・とーふの実機確認分）をとーふがSQL Editorで削除完了。注文関連テーブルは再びクリーンな状態
