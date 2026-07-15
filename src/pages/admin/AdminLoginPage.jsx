@@ -30,24 +30,44 @@ function AdminLoginPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="card max-w-sm mx-auto p-6 flex flex-col gap-4">
       <h1>管理者ログイン</h1>
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="メールアドレス"
-        required
-      />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="パスワード"
-        required
-      />
-      {error && <p role="alert">{error}</p>}
-      <button type="submit">ログイン</button>
+      <div>
+        <label className="form-label" htmlFor="admin-email">
+          メールアドレス
+        </label>
+        <input
+          id="admin-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="admin@example.com"
+          required
+          className="form-input"
+        />
+      </div>
+      <div>
+        <label className="form-label" htmlFor="admin-password">
+          パスワード
+        </label>
+        <input
+          id="admin-password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="8文字以上"
+          required
+          className="form-input"
+        />
+      </div>
+      {error && (
+        <p role="alert" className="text-[var(--danger)]">
+          {error}
+        </p>
+      )}
+      <button type="submit" className="btn-primary">
+        ログイン
+      </button>
     </form>
   )
 }

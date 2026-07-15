@@ -173,3 +173,34 @@ code {
   border-radius: 12px;
   box-shadow: var(--shadow-card);
 }
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-h);
+  margin-bottom: 4px;
+}
+
+/* --textではなく--text-mutedを枠線色に使うのは、--borderがカード罫線用の
+   薄い色で入力欄には視認性が不足するため */
+.form-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--text-muted);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: 15px/135% var(--sans);
+  color: var(--text-h);
+  background: var(--bg);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.form-input::placeholder {
+  color: var(--text-muted);
+}
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
