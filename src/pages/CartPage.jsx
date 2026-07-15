@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useCart } from '../contexts/CartContext'
 import { getProduct } from '../lib/products'
 import { createCheckoutSession } from '../lib/checkout'
+import { supabase } from '../lib/supabaseClient'
 
 function CartPage() {
   const { items, updateQuantity, removeFromCart } = useCart()
@@ -9,6 +11,7 @@ function CartPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [checkingOut, setCheckingOut] = useState(false)
+  const [needsLogin, setNeedsLogin] = useState(false)
 
   useEffect(() => {
     if (items.length === 0) {
@@ -41,11 +44,26 @@ function CartPage() {
 
   async function handleCheckout() {
     setError(null)
+    setNeedsLogin(false)
     setCheckingOut(true)
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session) {
+        setNeedsLogin(true)
+        return
+      }
+
       await createCheckoutSession(items)
     } catch (err) {
-      setError(err.message)
+      if (err.message === 'ログインが必要です') {
+        setNeedsLogin(true)
+      } else {
+        setError(err.message)
+      }
+    } finally {
       setCheckingOut(false)
     }
   }
@@ -57,6 +75,14 @@ function CartPage() {
         <p role="alert" className="text-[var(--danger)] mb-4">
           {error}
         </p>
+      )}
+      {needsLogin && (
+        <div role="alert" className="card p-4 mb-4 flex flex-wrap items-center justify-between gap-4">
+          <p className="text-[var(--danger)]">ログインが必要です</p>
+          <Link to="/login" state={{ from: '/cart' }} className="btn-primary no-underline">
+            ログインする
+          </Link>
+        </div>
       )}
       {loading && <p className="text-muted">読み込み中...</p>}
       {!loading && items.length === 0 && (
