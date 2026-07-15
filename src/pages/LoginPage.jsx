@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 
 function LoginPage() {
@@ -7,6 +7,7 @@ function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const navigate = useNavigate()
+  const location = useLocation()
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -18,7 +19,7 @@ function LoginPage() {
       return
     }
 
-    navigate('/')
+    navigate(location.state?.from ?? '/')
   }
 
   return (
