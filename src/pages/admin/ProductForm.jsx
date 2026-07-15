@@ -116,49 +116,88 @@ function ProductForm() {
   return (
     <div>
       <h1>{isEdit ? '商品編集' : '商品新規登録'}</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          商品名
+      <form onSubmit={handleSubmit} className="card max-w-lg p-6 flex flex-col gap-4">
+        <div>
+          <label className="form-label" htmlFor="product-name">
+            商品名
+          </label>
           <input
+            id="product-name"
             type="text"
             value={form.name}
             onChange={(e) => handleChange('name', e.target.value)}
             required
+            className="form-input"
           />
-        </label>
-        <label>
-          説明
+        </div>
+        <div>
+          <label className="form-label" htmlFor="product-description">
+            説明
+          </label>
           <textarea
+            id="product-description"
             value={form.description}
             onChange={(e) => handleChange('description', e.target.value)}
+            className="form-input"
+            rows={4}
           />
-        </label>
-        <label>
-          価格（円）
+        </div>
+        <div>
+          <label className="form-label" htmlFor="product-price">
+            価格（円）
+          </label>
           <input
+            id="product-price"
             type="number"
             min="0"
             step="1"
             value={form.price}
             onChange={(e) => handleChange('price', e.target.value)}
             required
+            className="form-input"
           />
-        </label>
-        <label>
-          商品ファイル（購入者向けダウンロード対象）
-          <input type="file" onChange={handleFileChange} disabled={uploadingFile} />
-        </label>
-        {uploadingFile && <p>アップロード中...</p>}
-        {form.file_path && !uploadingFile && <p className="text-muted">登録済み: {form.file_path}</p>}
-        <label>
-          商品画像
-          <input type="file" accept="image/*" onChange={handleImageChange} disabled={uploading} />
-        </label>
-        {uploading && <p>アップロード中...</p>}
-        {form.image_url && !uploading && (
-          <img src={form.image_url} alt="" width="120" height="120" style={{ objectFit: 'cover' }} />
-        )}
-        <label>
+        </div>
+        <div>
+          <label className="form-label" htmlFor="product-file">
+            商品ファイル（購入者向けダウンロード対象）
+          </label>
+          <input
+            id="product-file"
+            type="file"
+            onChange={handleFileChange}
+            disabled={uploadingFile}
+            className="form-input"
+          />
+          {uploadingFile && <p className="text-muted">アップロード中...</p>}
+          {form.file_path && !uploadingFile && (
+            <p className="text-muted">登録済み: {form.file_path}</p>
+          )}
+        </div>
+        <div>
+          <label className="form-label" htmlFor="product-image">
+            商品画像
+          </label>
+          <input
+            id="product-image"
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            disabled={uploading}
+            className="form-input"
+          />
+          {uploading && <p className="text-muted">アップロード中...</p>}
+          {form.image_url && !uploading && (
+            <img
+              src={form.image_url}
+              alt=""
+              width="120"
+              height="120"
+              className="rounded-lg mt-2"
+              style={{ objectFit: 'cover' }}
+            />
+          )}
+        </div>
+        <label className="flex items-center gap-2 text-[var(--text-h)]">
           <input
             type="checkbox"
             checked={form.is_active}
@@ -166,8 +205,12 @@ function ProductForm() {
           />
           公開する
         </label>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={uploading || uploadingFile}>
+        {error && (
+          <p role="alert" className="text-[var(--danger)]">
+            {error}
+          </p>
+        )}
+        <button type="submit" className="btn-primary" disabled={uploading || uploadingFile}>
           保存
         </button>
       </form>
