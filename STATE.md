@@ -28,13 +28,15 @@
 - feature/ui-polish → main: マージ済み（--no-ffマージコミット、STATE.mdのみコンフリクトが発生し完全差替版で解消。コードファイルは自動マージ）
 - feature/product-images → main: マージ済み（--no-ffマージコミット、STATE.mdのみコンフリクトが発生し完全差替版で解消。コードファイルは自動マージ）
 - feature/admin-login-polish → main: マージ済み（--no-ffマージコミット、コンフリクトなし）。とーふがブラウザで/admin/loginの見た目を確認しマージを指示
-- feature/download-delivery: 設計案をとーふに提示・承認済み（D-019）。コード実装完了（下記変更ログ参照）だが、Storageバケット作成SQLの手動実行・Edge Functions(get-checkout-downloads/get-download-url/更新版stripe-webhook)のデプロイ・実際の決済での動作確認はこれから
+- feature/download-delivery: 設計案をとーふに提示・承認済み（D-019）。コード実装完了、Storageバケット作成SQL実行済み、Edge Functions(get-checkout-downloads/get-download-url/更新版stripe-webhook)デプロイ済み、とーふが実決済でダウンロードまで動作確認済み。mainへのマージは指示待ち
 
 Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロード・管理者ログイン画面のデザイン統一の4機能がすべてmainに揃った状態。リモートへのpushはまだ実施していない（別途指示待ち）。
 
 ## 未確定
 - リモートへのpush（別途指示待ち）
-- feature/download-delivery: product-filesバケット作成SQLの手動実行（未実施）、Edge Functionsのデプロイ（未実施）、実決済での動作確認（未実施）、注文履歴ページ（/orders、D-003会員制の具体化）は今回のスコープ外として持ち越し
+- feature/download-delivery → mainのマージ（指示待ち）
+- 注文履歴ページ（/orders、D-003会員制の具体化）は今回のスコープ外として持ち越し
+- Stripe Refund APIによる返金処理
 - Stripe Refund APIによる返金処理
 - モバイル幅でのレスポンシブ表示は、この開発環境ではブラウザ自動リサイズが機能しないため未検証（Tailwindのflex-wrap/gridブレークポイントで対応実装済みだが、とーふによる実機/手動リサイズでの目視確認が必要）
 - 管理者用商品CRUD画面（一覧・フォーム）自体はデザイン統一の対象外のまま（顧客向け画面と管理者ログインのみ実施）
@@ -53,3 +55,4 @@ Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロ
 - 2026-07-16: /admin/loginのデザイン統一漏れに対応（feature/admin-login-polishブランチ、mainから分岐）。src/index.cssに.form-label・.form-input（枠線=--text-muted、フォーカス時に--accentボーダー＋--accent-bgリング）を新規追加。AdminLoginPage.jsxをフォーム全体.cardで囲み、メールアドレス・パスワード入力欄にラベル+form-input適用（プレースホルダーはadmin@example.com／8文字以上の補助例に変更）、ボタンを.btn-primaryに統一。ブラウザ(Claude in Chrome)でダークモード・ライトモード双方、通常時・フォーカス時の見た目を目視確認済み。D-018追加
 - 2026-07-16: とーふが/admin/loginの見た目を確認しfeature/admin-login-polish→mainのマージを指示。--no-ffでマージ、コンフリクトなし。リモートへのpushは未実施
 - 2026-07-16: 権利付与機能に着手（feature/download-deliveryブランチ、mainから分岐）。まず現状確認（productsのカラム構成・downloadsテーブルの既存有無・Storageバケットの有無）を行い、設計案（ファイル保存方式・downloadsスキーマ・署名URL発行タイミング/実装場所・有効期限・ダウンロード導線・再ダウンロード扱い）をとーふに提示し承認取得。追加でとーふから「/checkout/successは非ログイン状態でも来られるのでは」という確認があり、create-checkout-sessionを調査した結果チェックアウト自体が既にログイン必須と判明。その上で、ログイン状態に依存しない設計（download_token/service_role方式）を採用することで合意（D-019）。実装: supabase/migrations/20260716090000_create_product_files_storage.sql（product-filesバケット、非公開、admin限定insert/update/delete、selectポリシーなし）を作成し内容をとーふへ提示（SQL Editorでの手動実行は未実施）。src/lib/storage.jsにuploadProductFile追加、ProductForm.jsxの「ファイルパス」テキスト欄をファイル選択+アップロード中表示に置き換え。supabase/functions/stripe-webhook/index.tsにdownloads発行処理（該当order_items全件、expires_at=+30日）を追加。新規Edge Function get-checkout-downloads（session_idから購入商品＋download_token一覧を返す、処理未完了時はprocessing:trueでフロントにポーリングさせる）・get-download-url（download_tokenから60秒署名URLを発行、初回downloaded_at記録）を作成。src/lib/downloads.js（getCheckoutDownloads/getDownloadUrl）追加、CheckoutSuccessPage.jsxをsession_idクエリパラメータ対応・ポーリング・ダウンロードボタン一覧表示に書き換え。ビルド（npm run build）成功、ブラウザでCheckoutSuccessPageのエラーハンドリング動作を確認済み（Edge Function未デプロイのため意図通りエラー表示）。ProductForm.jsxは管理者ログインがとーふ専任のため未確認。Storageバケット作成SQLの手動実行とEdge Functionsのデプロイ（内容確認後）はこれから
+- 2026-07-16: product-filesバケット作成SQLをとーふがSQL Editorで手動実行し成功。stripe-webhook（downloads発行処理を含む更新版）・get-checkout-downloads・get-download-urlの3 Edge Functionsをnpx supabase functions deployでデプロイ完了。とーふが実決済（テストカード）でDESIGN_ROLE.mdファイルを実際にダウンロードできることを確認済み（署名URL経由で正しく取得。ダウンロードされた日本語ファイル名の文字化けはブラウザの文字コード判定によるもので実害なしと確認）。これによりD-006/D-019で設計した権利付与（決済成功後の期限付き署名URLダウンロード発行）の一連の流れがE2Eで動作確認済みとなった。mainへのマージは指示待ち
