@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { createProduct, getProduct, updateProduct } from '../../lib/products'
+import { uploadProductImage } from '../../lib/storage'
 
 const emptyForm = {
   name: '',
@@ -18,6 +19,7 @@ function ProductForm() {
 
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState(null)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     if (!isEdit) return
@@ -43,6 +45,23 @@ function ProductForm() {
 
   function handleChange(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  async function handleImageChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+
+    setError(null)
+    setUploading(true)
+    try {
+      const url = await uploadProductImage(file)
+      handleChange('image_url', url)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
   }
 
   async function handleSubmit(e) {
@@ -117,13 +136,13 @@ function ProductForm() {
           />
         </label>
         <label>
-          画像URL
-          <input
-            type="text"
-            value={form.image_url}
-            onChange={(e) => handleChange('image_url', e.target.value)}
-          />
+          商品画像
+          <input type="file" accept="image/*" onChange={handleImageChange} disabled={uploading} />
         </label>
+        {uploading && <p>アップロード中...</p>}
+        {form.image_url && !uploading && (
+          <img src={form.image_url} alt="" width="120" height="120" style={{ objectFit: 'cover' }} />
+        )}
         <label>
           <input
             type="checkbox"
@@ -133,7 +152,9 @@ function ProductForm() {
           公開する
         </label>
         {error && <p role="alert">{error}</p>}
-        <button type="submit">保存</button>
+        <button type="submit" disabled={uploading}>
+          保存
+        </button>
       </form>
     </div>
   )
