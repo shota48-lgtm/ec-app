@@ -5,6 +5,12 @@
 // 2. webhook_eventsテーブルへのinsertでevent idの重複を検出し、
 //    重複時(unique制約違反)は200を返して早期リターン(Stripe側の再送を止めるため)
 // 3. 該当order(stripe_session_id一致)のstatusを'pending'から'paid'に更新
+// 4. 該当orderのorder_items全件に対しdownloadsを1行ずつ発行
+//    (download_token/expires_atはdownloadsテーブルのデフォルトを利用しつつ
+//    expires_atのみ明示的にnow()+30日で設定。D-006の「決済成功後、期限付き
+//    署名URLでダウンロード発行」の具体化として、ここではダウンロード権利
+//    (エンタイトルメント)を発行するのみで、実ファイルの署名URL自体は
+//    get-download-url Functionがアクセス時点で都度発行する)
 //
 // 環境変数:
 // - SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY は
@@ -92,6 +98,26 @@ Deno.serve(async (req) => {
       console.error('order update error:', updateError.message)
     } else if (!order) {
       console.error(`order not found for stripe_session_id: ${session.id}`)
+    } else {
+      const { data: orderItems, error: orderItemsError } = await supabaseAdmin
+        .from('order_items')
+        .select('id')
+        .eq('order_id', order.id)
+
+      if (orderItemsError) {
+        console.error('order_items fetch error:', orderItemsError.message)
+      } else {
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        const downloadRows = orderItems.map((item: { id: string }) => ({
+          order_item_id: item.id,
+          expires_at: expiresAt,
+        }))
+
+        const { error: downloadsError } = await supabaseAdmin.from('downloads').insert(downloadRows)
+        if (downloadsError) {
+          console.error('downloads insert error:', downloadsError.message)
+        }
+      }
     }
   }
 

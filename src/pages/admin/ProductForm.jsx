@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { createProduct, getProduct, updateProduct } from '../../lib/products'
-import { uploadProductImage } from '../../lib/storage'
+import { uploadProductFile, uploadProductImage } from '../../lib/storage'
 
 const emptyForm = {
   name: '',
@@ -20,6 +20,7 @@ function ProductForm() {
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState(null)
   const [uploading, setUploading] = useState(false)
+  const [uploadingFile, setUploadingFile] = useState(false)
 
   useEffect(() => {
     if (!isEdit) return
@@ -60,6 +61,23 @@ function ProductForm() {
       setError(err.message)
     } finally {
       setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  async function handleFileChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+
+    setError(null)
+    setUploadingFile(true)
+    try {
+      const path = await uploadProductFile(file)
+      handleChange('file_path', path)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setUploadingFile(false)
       e.target.value = ''
     }
   }
@@ -127,14 +145,11 @@ function ProductForm() {
           />
         </label>
         <label>
-          ファイルパス
-          <input
-            type="text"
-            value={form.file_path}
-            onChange={(e) => handleChange('file_path', e.target.value)}
-            placeholder="Storage連携は次フェーズで実装予定"
-          />
+          商品ファイル（購入者向けダウンロード対象）
+          <input type="file" onChange={handleFileChange} disabled={uploadingFile} />
         </label>
+        {uploadingFile && <p>アップロード中...</p>}
+        {form.file_path && !uploadingFile && <p className="text-muted">登録済み: {form.file_path}</p>}
         <label>
           商品画像
           <input type="file" accept="image/*" onChange={handleImageChange} disabled={uploading} />
@@ -152,7 +167,7 @@ function ProductForm() {
           公開する
         </label>
         {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={uploading}>
+        <button type="submit" disabled={uploading || uploadingFile}>
           保存
         </button>
       </form>
