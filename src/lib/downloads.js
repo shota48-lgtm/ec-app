@@ -18,3 +18,7 @@ export async function getDownloadUrl(token) {
   const data = await invokeOrThrow('get-download-url', { token })
   return data.url
 }
+
+export async function renewDownload(token) {
+  return invokeOrThrow('renew-download', { token })
+}

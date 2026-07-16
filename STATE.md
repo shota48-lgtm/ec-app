@@ -23,6 +23,8 @@
 - D-020: モバイル実機確認で判明した不具合の修正（feature/login-redirect-fixブランチ）。/cartで非ログイン状態のまま「レジに進む」を押すと「ログインが必要です」という文言のみが表示され、/loginへの導線が存在しなかった（機能欠落）。CartPage.jsxのhandleCheckoutを、レジ進む押下時にsupabase.auth.getSession()で先にログイン状態をチェックする方式に変更し、未ログイン時は.btn-primaryスタイルの「ログインする」ボタン（Link to="/login" state={{from: '/cart'}}）を表示するよう修正。LoginPage.jsxはlocation.state.fromがあればログイン成功後にそこへnavigateするよう変更（未指定時は従来通り'/'）。デスクトップブラウザに加え、この開発環境ではブラウザの自動リサイズがビューポート幅に反映されない制約があるため、390px/320px幅のiframeを注入してモバイル幅相当でのレンダリング・タップ操作を検証（ボタンがはみ出さず・隠れずに表示され、flex-wrapにより縦積みに切り替わることを確認）。最終的にとーふがモバイル実機（192.168.11.2経由）でカート→ログイン促進表示→ログイン画面遷移→ログイン→カートに戻る→レジに進む→決済→ダウンロードの全フローを通しで確認し、問題なしと確認済み
 - D-021: 管理者用商品CRUD画面（/admin/products一覧・/admin/products/new・/admin/products/:id/edit）にデザイントークンを適用（feature/admin-crud-polishブランチ）。ui-polish（D-016）実施当初、対象は顧客向け画面のみでこの3画面は範囲外のまま残っていた。一覧ページ: 各商品行を.cardの縦積みリストに変更し、「編集」を.btn-outline、「削除」を.btn-textに統一、「新規登録」を.btn-primaryでh1と並べて配置。フォームページ: フォーム全体を.card（admin/loginと同じmax-w+padding+flex flex-colパターン）で囲み、商品名・説明・価格・商品ファイル・商品画像の各入力欄にlabel.form-label+入力要素.form-inputを適用、「保存」ボタンを.btn-primaryに統一。「公開する」チェックボックスはレイアウトのみ軽く整えるにとどめた（チェックボックス自体の見た目は変更していない）
 
+- D-022: 注文履歴ページ（/orders、D-003会員制の具体化）とダウンロード期限切れ時の購入者セルフ再発行機能を実装（feature/order-historyブランチ）。downloadsテーブルにrenewal_count（integer、default 0）カラムを追加するマイグレーション（supabase/migrations/20260716150000_add_downloads_renewal_count.sql）を事前提示・承認後にとーふがSQL Editorで実行。/ordersはRequireAuth（新設、RequireAdminと同様のパターンでログイン必須ページを保護）でガードし、src/lib/orders.js（getMyOrders）でorders→order_items→products/downloadsをネストしたselectを直接クライアントから発行（service_role経由ではなく、D-011で定義済みのRLS「本人のみ閲覧可」ポリシーにそのまま乗る設計。D-019で「将来の/orders会員ページ用として温存」としていたdownloadsのRLSをここで実際に使用）。新規Edge Function renew-download（get-download-url等とは異なりログイン状態に依存する設計。Authorizationヘッダーのユーザーjwtで認証し、対象downloadsが認証ユーザー自身の注文に紐づくことをorder_items→orders.user_idの照合で確認してからexpires_atを+30日・renewal_countをインクリメント。renewal_countが3以上なら403エラー）をデプロイ。src/lib/downloads.jsにrenewDownload追加。App.jsxのHeaderはsupabase.auth.getSession/onAuthStateChangeでログイン状態を検知し、ログイン時のみ「注文履歴」リンクをカートリンクと並べて表示。ステータス表示はpaid=「支払い済み」、pending=「決済が完了していません」。ダウンロード欄はpaid注文のみ表示し、有効期限内は「ダウンロード」ボタン、期限切れ+再発行3回未満は「有効期限が切れています」＋「再発行する」ボタン、期限切れ+再発行3回以上は「有効期限が切れています」＋「再発行の上限に達しました。サポートにお問い合わせください」を表示。npm run build成功。ブラウザ(Claude in Chrome)で、既存のpending注文1件に加えSQL Editorでとーふが作成した検証用paid注文3件（期限内/期限切れ・再発行可/期限切れ・上限到達）を用いて、4パターンすべての表示と「再発行する」ボタン押下による実際のDB更新（expires_at延長・renewal_countインクリメント、再取得後に「ダウンロード」ボタンへ表示が切り替わること）を確認済み。なお、products RLSは「is_active=trueの商品のみ誰でも閲覧可」のみで購入者本人の注文に紐づく非公開化済み商品を閲覧できるポリシーが無いため、将来管理者が商品をis_active=falseにした場合、その商品を含む/ordersの表示で商品名が欠落する可能性がある（未検証・未対応、今回のスコープ外として記録のみ）。mainへのマージは指示待ち
+
 ## 現在フェーズ
 6本のfeatureブランチ（feature/stripe-webhook・feature/ui-polish・feature/product-images・feature/admin-login-polish・feature/download-delivery・feature/login-redirect-fix）すべてをmainへマージ完了。
 
@@ -38,7 +40,9 @@ Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロ
 
 ## 未確定
 - feature/admin-crud-polish → mainのマージ（指示待ち）
-- 注文履歴ページ（/orders、D-003会員制の具体化）は今回のスコープ外として持ち越し
+- feature/order-history → mainのマージ（指示待ち）
+- /orders検証用に作成したテスト注文3件（paid、テスト商品A、SQL Editorでとーふが直接insert）の削除（とーふ判断待ち）
+- 商品がis_active=falseになった場合の/orders表示（products RLSに購入者本人の非公開商品閲覧ポリシーが無い、D-022参照）
 - Stripe Refund APIによる返金処理
 - カート/ログイン/ダウンロードの導線以外のページのモバイル幅レスポンシブ表示は、この開発環境ではブラウザ自動リサイズが機能しないため引き続き未検証（Tailwindのflex-wrap/gridブレークポイントで対応実装済みだが、とーふによる実機での目視確認が必要）
 
@@ -65,3 +69,4 @@ Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロ
 - 2026-07-16: とーふがfeature/login-redirect-fix→mainのマージを指示。--no-ffでマージ、コンフリクトなし（STATE.mdも自動マージ）。push許可を得てgit pushを実施、GitHubへ反映（f09a79c..abf1fa5）。これで6機能すべてがmain・GitHub双方に揃った状態
 - 2026-07-16: README.md（Viteデフォルト雛形のまま放置されていた）を整備。プロジェクト概要・技術スタック・主な機能一覧・セットアップ手順（npm install/.envの設定項目/npm run dev）・ディレクトリ構成を記載。実際のAPIキー等の機密情報は一切含めていない。JUDGMENT_HEURISTICS.mdはJ10・J-XXという欠番・仮番号をJ1・J2の連番に振り直し、各項目を「背景」「対処方針」の統一形式に整理（内容・意味は変更せず体裁のみ整頓）。実装コードには触れていないため、mainへ直接コミット
 - 2026-07-16: 管理者用商品CRUD画面のデザイン統一（feature/admin-crud-polishブランチ、mainから分岐）。ProductList.jsx: <table>を.cardの縦積みリスト（<ul>+<li>）に置き換え、商品名・価格・公開状態を1カードにまとめ「編集」(.btn-outline)・「削除」(.btn-text)を配置、見出し横に「新規登録」(.btn-primary)を配置。ProductForm.jsx: フォーム全体を.card（admin/loginと同じパターン）で囲み、商品名・説明・価格・商品ファイル・商品画像の各入力欄にlabel.form-label+.form-inputを適用、「保存」を.btn-primaryに統一。npm run build成功。とーふがログイン済みブラウザで一覧・新規登録・編集の3画面すべての見た目を確認し「OK」と確認済み。D-021追加。mainへのマージは指示待ち
+- 2026-07-16: 注文履歴ページ（/orders）とダウンロード期限切れ時の購入者セルフ再発行機能を実装（feature/order-historyブランチ、mainから分岐）。downloadsテーブルへのrenewal_countカラム追加SQLを実装前にとーふへ提示し承認取得後、とーふがSQL Editorで実行。renew-download Edge Functionを実装・npx supabase functions deployでデプロイ。src/lib/orders.js（getMyOrders）・src/lib/downloads.js（renewDownload追加）・src/components/RequireAuth.jsx（新設）・src/pages/OrdersPage.jsx・App.jsx（/orders追加、Headerに注文履歴リンク追加）を実装。npm run build成功。動作確認用に、既存のpending注文1件に加え、SQL Editorでとーふが検証用paid注文3件（期限内/期限切れ・再発行可/期限切れ・上限到達）を作成する旨を事前に提示・承認を得てから実行。ブラウザ(Claude in Chrome)で4パターンすべての表示、および「再発行する」ボタン押下で実際にDBのexpires_at/renewal_countが更新され表示が「ダウンロード」ボタンへ切り替わることを確認済み。D-022追加。作成した検証用テスト注文3件は削除せず残っている（とーふ判断待ち）。mainへのマージは指示待ち
