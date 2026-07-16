@@ -5,6 +5,7 @@ import { getDownloadUrl, renewDownload } from '../lib/downloads'
 const STATUS_LABELS = {
   pending: '決済が完了していません',
   paid: '支払い済み',
+  refunded: '返金済み',
 }
 
 const MAX_RENEWALS = 3

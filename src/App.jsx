@@ -8,6 +8,7 @@ import AdminLoginPage from './pages/admin/AdminLoginPage.jsx'
 import AdminDashboard from './pages/admin/AdminDashboard.jsx'
 import ProductList from './pages/admin/ProductList.jsx'
 import ProductForm from './pages/admin/ProductForm.jsx'
+import AdminOrderList from './pages/admin/AdminOrderList.jsx'
 import ProductListPage from './pages/ProductListPage.jsx'
 import ProductDetailPage from './pages/ProductDetailPage.jsx'
 import CartPage from './pages/CartPage.jsx'
@@ -97,6 +98,7 @@ function App() {
                   <Route path="products" element={<ProductList />} />
                   <Route path="products/new" element={<ProductForm />} />
                   <Route path="products/:id/edit" element={<ProductForm />} />
+                  <Route path="orders" element={<AdminOrderList />} />
                 </Routes>
               </RequireAdmin>
             }
