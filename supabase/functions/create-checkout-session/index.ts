@@ -121,6 +121,7 @@ Deno.serve(async (req) => {
         product_id: product.id,
         quantity: item.quantity,
         price_at_purchase: product.price,
+        product_name: product.name,
       }
     })
 

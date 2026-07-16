@@ -43,8 +43,10 @@
 9本のfeatureブランチすべてがmainへマージ完了。GitHubリモート(https://github.com/shota48-lgtm/ec-app.git)へはe4f3523（README更新）時点までpush済み。開発検証中に作成されたテスト注文は都度とーふがSQL Editorで削除しており、注文関連テーブルは基本的にクリーンな状態を保っている。
 
 ## 未確定
-- 商品がis_active=falseになった場合の/orders表示（products RLSに購入者本人の非公開商品閲覧ポリシーが無い、D-022参照）
 - 返金の粒度は全額返金のみ対応（D-023）。部分返金（数量・金額指定）が必要になった場合は別途設計が必要
+
+## 今後の検討
+- supabase/functions/get-download-url/index.tsのselectがproducts(file_path, name)を取得しているが、実際に使用しているのはfile_pathのみでnameは未使用（今回のorder_items.product_nameスナップショット対応のスコープ外として記録のみ、削除・修正は未実施）
 
 ## 変更ログ
 - 2026-07-14: 仕様確定（D-001〜D-009）、プロジェクト初期化

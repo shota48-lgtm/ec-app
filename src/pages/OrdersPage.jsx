@@ -122,7 +122,7 @@ function OrdersPage() {
                         key={item.id}
                         className="flex flex-wrap items-center justify-between gap-3 border border-[var(--border)] rounded-lg px-4 py-3"
                       >
-                        <span className="text-[var(--text-h)]">{item.products?.name}</span>
+                        <span className="text-[var(--text-h)]">{item.product_name}</span>
                         {!download && <span className="text-muted">準備中です</span>}
                         {download && !expired && (
                           <button
