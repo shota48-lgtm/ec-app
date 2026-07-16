@@ -38,15 +38,14 @@
 - feature/login-redirect-fix → main: マージ済み（--no-ffマージコミット、コンフリクトなし）。/cartでの非ログイン時「レジに進む」導線欠落バグを修正（D-020）。デスクトップ・擬似モバイル幅（iframe検証）・とーふのモバイル実機（購入〜ダウンロードまでの全フロー）で動作確認後、マージを指示
 - feature/admin-crud-polish → main: マージ済み（管理者用商品CRUD画面にデザイントークンを適用、D-021）
 - feature/order-history → main: マージ済み（--no-ffマージコミット、コンフリクトなし）。注文履歴ページ・ダウンロード再発行機能を実装（D-022）
-- feature/refund: Stripe Refund APIによる返金処理を実装（D-023）。とーふが実決済→管理画面からの返金実行→購入者側での反映まで一連の流れを動作確認済み。mainへのマージは指示待ち
+- feature/refund → main: マージ済み（--no-ffマージコミット、コンフリクトなし）。Stripe Refund APIによる返金処理を実装（D-023）。とーふが実決済→管理画面からの返金実行→購入者側での反映まで一連の流れを動作確認済み
 
-GitHubリモート(https://github.com/shota48-lgtm/ec-app.git)へは86804ab（feature/order-historyマージ）時点までpush済み。開発検証中に作成されたテスト注文は都度とーふがSQL Editorで削除しており、注文関連テーブルは基本的にクリーンな状態を保っている。
+9本のfeatureブランチすべてがmainへマージ完了。GitHubリモート(https://github.com/shota48-lgtm/ec-app.git)へはe4f3523（README更新）時点までpush済み。開発検証中に作成されたテスト注文は都度とーふがSQL Editorで削除しており、注文関連テーブルは基本的にクリーンな状態を保っている。
 
 ## 未確定
-- feature/refund → mainのマージ（指示待ち）
+- 返金テスト（D-023動作確認）で作成された注文データ1件（6000円、status='refunded'）の削除（とーふ判断待ち、いつも通りSQL Editorでの手動削除を想定）
 - 商品がis_active=falseになった場合の/orders表示（products RLSに購入者本人の非公開商品閲覧ポリシーが無い、D-022参照）
 - 返金の粒度は全額返金のみ対応（D-023）。部分返金（数量・金額指定）が必要になった場合は別途設計が必要
-- カート/ログイン/ダウンロードの導線以外のページのモバイル幅レスポンシブ表示は、この開発環境ではブラウザ自動リサイズが機能しないため引き続き未検証（Tailwindのflex-wrap/gridブレークポイントで対応実装済みだが、とーふによる実機での目視確認が必要）
 
 ## 変更ログ
 - 2026-07-14: 仕様確定（D-001〜D-009）、プロジェクト初期化
@@ -75,3 +74,6 @@ GitHubリモート(https://github.com/shota48-lgtm/ec-app.git)へは86804ab（fe
 - 2026-07-16: とーふが検証用テスト注文3件の削除完了を報告し、feature/order-history→mainのマージを指示。--no-ffでマージ、コンフリクトなし。push許可を得てgit pushを実施、GitHubへ反映（ec1edd3..86804ab）
 - 2026-07-16: Stripe Refund APIによる返金処理の設計案を提示（D-007の具体化）。返金の粒度・実行者と導線・ステータス管理方法・ダウンロード権利の扱い・Stripe連携方式の5論点について、一般的なECサイトでの慣行とその理由を専門用語を避けて説明する形で提示し、とーふの承認を得た。承認時、実装スコープとして(1)設計検討中に見つかったrenew-download/get-download-urlの注文statusチェック漏れの修正を含めること、(2)DBスキーマ変更・Edge Function変更は事前にこのチャットで内容（diff・全文）を提示し承認を得ること、(3)新規ブランチfeature/refundで作業すること、の3点が明示された
 - 2026-07-16: feature/refundブランチで返金処理を実装（D-023）。DBスキーマ変更（orders.refunded_atカラム追加）とEdge Function全ファイルの内容をとーふへ提示し承認を得てから、npx supabase functions deployで5関数（stripe-webhook更新・refund-order新規・list-orders新規・get-download-url修正・renew-download修正）をデプロイ、SQL Editorでマイグレーションを実行。あわせてStripeダッシュボードのWebhook設定にcharge.refundedイベントをとーふが追加。/admin/orders（AdminOrderList.jsx）・src/lib/adminOrders.js（listOrders/refundOrder）を新規実装し、AdminDashboardとApp.jsxにルーティングを追加。OrdersPage.jsxに「返金済み」ステータス表示を追加。npm run build成功。動作確認は、とーふが実際にテストカードで決済→/checkout/successでダウンロード可能状態を確認→管理者アカウントで/admin/ordersから対象注文を確認→「返金する」ボタン（インライン確認方式）で返金実行→ステータスが「返金済み」に変化、という一連の流れを実施。続けてCCがブラウザ(Claude in Chrome)で購入者側の/ordersを確認し、同じ注文が「返金済み」表示になりダウンロード欄が一切表示されなくなっていることを確認した。mainへのマージは指示待ち
+- 2026-07-16: とーふがfeature/refund→mainのマージを指示。--no-ffでマージ、コンフリクトなし。npm run build成功。push許可を得てgit pushを実施、GitHubへ反映（86804ab..fbb2278）
+- 2026-07-16: README.mdを9機能すべてがmain揃った現状に合わせて更新。主な機能一覧に権利付与（ダウンロード配信・セルフ再発行）・注文履歴ページ・返金機能を追加、技術スタックの決済欄にStripe Refund APIを追記、ディレクトリ構成の説明も現状のファイル構成に合わせて更新。機密情報を含まないことを確認し、実装コードには触れていないためmainへ直接コミット。push許可を得てgit pushを実施、GitHubへ反映（fbb2278..e4f3523）
+- 2026-07-16: モバイル実機確認のため開発サーバーを`npm run dev -- --host`（前回のfeature/login-redirect-fix検証と同じ方式）で起動し、ネットワークURL（http://192.168.11.2:5173/）をとーふへ案内。とーふがモバイル実機で/admin/ordersの表示、および返金フロー（確認ダイアログ→返金実行→ステータス変化）を確認し「問題なし」と報告。確認後、開発サーバーを通常モード（--hostなし）に戻した
