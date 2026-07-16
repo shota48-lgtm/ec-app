@@ -25,8 +25,10 @@
 
 - D-022: 注文履歴ページ（/orders、D-003会員制の具体化）とダウンロード期限切れ時の購入者セルフ再発行機能を実装（feature/order-historyブランチ）。downloadsテーブルにrenewal_count（integer、default 0）カラムを追加するマイグレーション（supabase/migrations/20260716150000_add_downloads_renewal_count.sql）を事前提示・承認後にとーふがSQL Editorで実行。/ordersはRequireAuth（新設、RequireAdminと同様のパターンでログイン必須ページを保護）でガードし、src/lib/orders.js（getMyOrders）でorders→order_items→products/downloadsをネストしたselectを直接クライアントから発行（service_role経由ではなく、D-011で定義済みのRLS「本人のみ閲覧可」ポリシーにそのまま乗る設計。D-019で「将来の/orders会員ページ用として温存」としていたdownloadsのRLSをここで実際に使用）。新規Edge Function renew-download（get-download-url等とは異なりログイン状態に依存する設計。Authorizationヘッダーのユーザーjwtで認証し、対象downloadsが認証ユーザー自身の注文に紐づくことをorder_items→orders.user_idの照合で確認してからexpires_atを+30日・renewal_countをインクリメント。renewal_countが3以上なら403エラー）をデプロイ。src/lib/downloads.jsにrenewDownload追加。App.jsxのHeaderはsupabase.auth.getSession/onAuthStateChangeでログイン状態を検知し、ログイン時のみ「注文履歴」リンクをカートリンクと並べて表示。ステータス表示はpaid=「支払い済み」、pending=「決済が完了していません」。ダウンロード欄はpaid注文のみ表示し、有効期限内は「ダウンロード」ボタン、期限切れ+再発行3回未満は「有効期限が切れています」＋「再発行する」ボタン、期限切れ+再発行3回以上は「有効期限が切れています」＋「再発行の上限に達しました。サポートにお問い合わせください」を表示。npm run build成功。ブラウザ(Claude in Chrome)で、既存のpending注文1件に加えSQL Editorでとーふが作成した検証用paid注文3件（期限内/期限切れ・再発行可/期限切れ・上限到達）を用いて、4パターンすべての表示と「再発行する」ボタン押下による実際のDB更新（expires_at延長・renewal_countインクリメント、再取得後に「ダウンロード」ボタンへ表示が切り替わること）を確認済み。なお、products RLSは「is_active=trueの商品のみ誰でも閲覧可」のみで購入者本人の注文に紐づく非公開化済み商品を閲覧できるポリシーが無いため、将来管理者が商品をis_active=falseにした場合、その商品を含む/ordersの表示で商品名が欠落する可能性がある（未検証・未対応、今回のスコープ外として記録のみ）。mainへのマージは指示待ち
 
+- D-023: Stripe Refund APIによる返金処理（D-007の具体化、feature/refundブランチ）。実装前に設計案（返金の粒度・実行者と導線・ステータス管理方法・ダウンロード権利の扱い・Stripe連携方式の5論点、それぞれ一般的なECサイトの慣行とその理由を添えて）をとーふに提示し承認取得。採用した設計は次の通り。(1) 粒度は全額返金のみ、部分返金は対応しない。(2) 実行者は管理者のみ、新設の/admin/orders（AdminOrderList.jsx、既存の/admin/products一覧と同じ.cardリストのスタイル）から操作。購入者メールアドレス表示のため新規Edge Function list-orders（service_role経由でauth.admin.listUsers()と突き合わせ）を追加。(3) ステータス管理はorders.statusに既存の'refunded'値をそのまま使う（D-011の制約で元々許容済みのため追加マイグレーション不要）。加えてorders.refunded_atカラム（timestamptz、nullable）を追加。(4) 返金確定時に該当downloadsのexpires_atを即時失効。ただし設計検討中に、renew-download/get-download-urlの両Edge Functionが紐づく注文のstatusを一切チェックしていない抜け道（返金後も購入者が「再発行する」でダウンロードを復活できてしまう）が判明したため、両関数に「紐づく注文のstatusがpaidであること」のチェックを追加（今回のスコープに含めてセットで対応）。(5) Stripe連携は新規Edge Function refund-order（管理者権限チェック→status=paidの条件付きDB更新→Stripe Refund API呼び出し（Idempotency Key=`refund-order-{orderId}`で二重返金防止）→Stripe失敗時はDBをpaidへロールバック→成功時はdownloads即時失効、という順序）。あわせてstripe-webhookのcheckout.session.completed処理でstripe_payment_intent_id（返金にはpayment_intentが必要だが従来保存していなかった）を保存するよう修正し、新たにcharge.refundedイベントを購読してStripeダッシュボードから直接返金された場合でもDBを同期する安全網を追加（Stripe側のWebhook設定にcharge.refundedイベントをとーふが追加）。DBスキーマ変更（refunded_atカラム追加）とEdge Function全ファイルの内容（diff・全文）は事前にとーふへ提示し承認を得てから、npx supabase functions deployでの5関数（stripe-webhook・refund-order・list-orders・get-download-url・renew-download）デプロイ、SQL Editorでのマイグレーション実行を実施。npm run build成功。とーふが実際にテストカードで決済→/checkout/successでダウンロード可能状態を確認→管理者アカウントでログインし/admin/ordersで対象注文を確認→「返金する」ボタン（インライン確認方式、押下後に「本当に返金しますか？」→「返金を実行する」の2段階、ネイティブconfirm()は自動テストのダイアログブロック回避のため不採用）で返金を実行しステータスが「返金済み」に変化することを確認、続けて購入者側の/ordersでも同じ注文が「返金済み」表示になりダウンロード欄（ダウンロードボタン・再発行するボタンとも）が一切表示されなくなることをブラウザ(Claude in Chrome)で確認済み。mainへのマージは指示待ち
+
 ## 現在フェーズ
-6本のfeatureブランチ（feature/stripe-webhook・feature/ui-polish・feature/product-images・feature/admin-login-polish・feature/download-delivery・feature/login-redirect-fix）すべてをmainへマージ完了。
+9本のfeatureブランチ（feature/stripe-webhook・feature/ui-polish・feature/product-images・feature/admin-login-polish・feature/download-delivery・feature/login-redirect-fix・feature/admin-crud-polish・feature/order-history・feature/refund）のうち、feature/refund以外はすべてmainへマージ完了。
 
 - feature/stripe-webhook → main: マージ済み（--no-ffマージコミット、コンフリクトなし）
 - feature/ui-polish → main: マージ済み（--no-ffマージコミット、STATE.mdのみコンフリクトが発生し完全差替版で解消。コードファイルは自動マージ）
@@ -34,16 +36,16 @@
 - feature/admin-login-polish → main: マージ済み（--no-ffマージコミット、コンフリクトなし）。とーふがブラウザで/admin/loginの見た目を確認しマージを指示
 - feature/download-delivery → main: マージ済み（--no-ffマージコミット、コンフリクトなし）。設計案提示・承認（D-019）→実装→Storageバケット作成SQL実行→Edge Functionsデプロイ→とーふが実決済でダウンロードまで動作確認、を経てマージを指示
 - feature/login-redirect-fix → main: マージ済み（--no-ffマージコミット、コンフリクトなし）。/cartでの非ログイン時「レジに進む」導線欠落バグを修正（D-020）。デスクトップ・擬似モバイル幅（iframe検証）・とーふのモバイル実機（購入〜ダウンロードまでの全フロー）で動作確認後、マージを指示
-- feature/admin-crud-polish: 管理者用商品CRUD画面（一覧・新規登録・編集）にデザイントークンを適用（D-021）。とーふがログイン済みブラウザで一覧・新規登録・編集の3画面すべての見た目を確認済み。mainへのマージは指示待ち
+- feature/admin-crud-polish → main: マージ済み（管理者用商品CRUD画面にデザイントークンを適用、D-021）
+- feature/order-history → main: マージ済み（--no-ffマージコミット、コンフリクトなし）。注文履歴ページ・ダウンロード再発行機能を実装（D-022）
+- feature/refund: Stripe Refund APIによる返金処理を実装（D-023）。とーふが実決済→管理画面からの返金実行→購入者側での反映まで一連の流れを動作確認済み。mainへのマージは指示待ち
 
-Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロード・管理者ログイン画面のデザイン統一・権利付与（ダウンロード発行）・login-redirect-fixの6機能がすべてmainに揃い、GitHubリモート(https://github.com/shota48-lgtm/ec-app.git)へもpush済み。開発検証中に作成されたテスト注文（最初のクリーンアップでorders 10件、feature/login-redirect-fix検証中に生じた分としてさらに2件、いずれもStripeテストモード決済・実売上なし）とその紐づくorder_items・downloadsは削除済みで、注文関連テーブルはクリーンな状態。
+GitHubリモート(https://github.com/shota48-lgtm/ec-app.git)へは86804ab（feature/order-historyマージ）時点までpush済み。開発検証中に作成されたテスト注文は都度とーふがSQL Editorで削除しており、注文関連テーブルは基本的にクリーンな状態を保っている。
 
 ## 未確定
-- feature/admin-crud-polish → mainのマージ（指示待ち）
-- feature/order-history → mainのマージ（指示待ち）
-- /orders検証用に作成したテスト注文3件（paid、テスト商品A、SQL Editorでとーふが直接insert）の削除（とーふ判断待ち）
+- feature/refund → mainのマージ（指示待ち）
 - 商品がis_active=falseになった場合の/orders表示（products RLSに購入者本人の非公開商品閲覧ポリシーが無い、D-022参照）
-- Stripe Refund APIによる返金処理
+- 返金の粒度は全額返金のみ対応（D-023）。部分返金（数量・金額指定）が必要になった場合は別途設計が必要
 - カート/ログイン/ダウンロードの導線以外のページのモバイル幅レスポンシブ表示は、この開発環境ではブラウザ自動リサイズが機能しないため引き続き未検証（Tailwindのflex-wrap/gridブレークポイントで対応実装済みだが、とーふによる実機での目視確認が必要）
 
 ## 変更ログ
@@ -70,3 +72,6 @@ Stripe Webhook・顧客向け画面デザイン統一・商品画像アップロ
 - 2026-07-16: README.md（Viteデフォルト雛形のまま放置されていた）を整備。プロジェクト概要・技術スタック・主な機能一覧・セットアップ手順（npm install/.envの設定項目/npm run dev）・ディレクトリ構成を記載。実際のAPIキー等の機密情報は一切含めていない。JUDGMENT_HEURISTICS.mdはJ10・J-XXという欠番・仮番号をJ1・J2の連番に振り直し、各項目を「背景」「対処方針」の統一形式に整理（内容・意味は変更せず体裁のみ整頓）。実装コードには触れていないため、mainへ直接コミット
 - 2026-07-16: 管理者用商品CRUD画面のデザイン統一（feature/admin-crud-polishブランチ、mainから分岐）。ProductList.jsx: <table>を.cardの縦積みリスト（<ul>+<li>）に置き換え、商品名・価格・公開状態を1カードにまとめ「編集」(.btn-outline)・「削除」(.btn-text)を配置、見出し横に「新規登録」(.btn-primary)を配置。ProductForm.jsx: フォーム全体を.card（admin/loginと同じパターン）で囲み、商品名・説明・価格・商品ファイル・商品画像の各入力欄にlabel.form-label+.form-inputを適用、「保存」を.btn-primaryに統一。npm run build成功。とーふがログイン済みブラウザで一覧・新規登録・編集の3画面すべての見た目を確認し「OK」と確認済み。D-021追加。mainへのマージは指示待ち
 - 2026-07-16: 注文履歴ページ（/orders）とダウンロード期限切れ時の購入者セルフ再発行機能を実装（feature/order-historyブランチ、mainから分岐）。downloadsテーブルへのrenewal_countカラム追加SQLを実装前にとーふへ提示し承認取得後、とーふがSQL Editorで実行。renew-download Edge Functionを実装・npx supabase functions deployでデプロイ。src/lib/orders.js（getMyOrders）・src/lib/downloads.js（renewDownload追加）・src/components/RequireAuth.jsx（新設）・src/pages/OrdersPage.jsx・App.jsx（/orders追加、Headerに注文履歴リンク追加）を実装。npm run build成功。動作確認用に、既存のpending注文1件に加え、SQL Editorでとーふが検証用paid注文3件（期限内/期限切れ・再発行可/期限切れ・上限到達）を作成する旨を事前に提示・承認を得てから実行。ブラウザ(Claude in Chrome)で4パターンすべての表示、および「再発行する」ボタン押下で実際にDBのexpires_at/renewal_countが更新され表示が「ダウンロード」ボタンへ切り替わることを確認済み。D-022追加。作成した検証用テスト注文3件は削除せず残っている（とーふ判断待ち）。mainへのマージは指示待ち
+- 2026-07-16: とーふが検証用テスト注文3件の削除完了を報告し、feature/order-history→mainのマージを指示。--no-ffでマージ、コンフリクトなし。push許可を得てgit pushを実施、GitHubへ反映（ec1edd3..86804ab）
+- 2026-07-16: Stripe Refund APIによる返金処理の設計案を提示（D-007の具体化）。返金の粒度・実行者と導線・ステータス管理方法・ダウンロード権利の扱い・Stripe連携方式の5論点について、一般的なECサイトでの慣行とその理由を専門用語を避けて説明する形で提示し、とーふの承認を得た。承認時、実装スコープとして(1)設計検討中に見つかったrenew-download/get-download-urlの注文statusチェック漏れの修正を含めること、(2)DBスキーマ変更・Edge Function変更は事前にこのチャットで内容（diff・全文）を提示し承認を得ること、(3)新規ブランチfeature/refundで作業すること、の3点が明示された
+- 2026-07-16: feature/refundブランチで返金処理を実装（D-023）。DBスキーマ変更（orders.refunded_atカラム追加）とEdge Function全ファイルの内容をとーふへ提示し承認を得てから、npx supabase functions deployで5関数（stripe-webhook更新・refund-order新規・list-orders新規・get-download-url修正・renew-download修正）をデプロイ、SQL Editorでマイグレーションを実行。あわせてStripeダッシュボードのWebhook設定にcharge.refundedイベントをとーふが追加。/admin/orders（AdminOrderList.jsx）・src/lib/adminOrders.js（listOrders/refundOrder）を新規実装し、AdminDashboardとApp.jsxにルーティングを追加。OrdersPage.jsxに「返金済み」ステータス表示を追加。npm run build成功。動作確認は、とーふが実際にテストカードで決済→/checkout/successでダウンロード可能状態を確認→管理者アカウントで/admin/ordersから対象注文を確認→「返金する」ボタン（インライン確認方式）で返金実行→ステータスが「返金済み」に変化、という一連の流れを実施。続けてCCがブラウザ(Claude in Chrome)で購入者側の/ordersを確認し、同じ注文が「返金済み」表示になりダウンロード欄が一切表示されなくなっていることを確認した。mainへのマージは指示待ち

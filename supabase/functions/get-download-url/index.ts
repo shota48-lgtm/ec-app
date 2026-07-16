@@ -9,6 +9,8 @@
 // (get-checkout-downloadsと同じ設計方針)。
 //
 // 初回アクセス時にdownloads.downloaded_atを記録する。
+//
+// 紐づく注文のstatusがpaid以外(返金済み等)の場合はダウンロードを拒否する。
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 
@@ -43,7 +45,7 @@ Deno.serve(async (req) => {
 
     const { data: download, error: downloadError } = await supabaseAdmin
       .from('downloads')
-      .select('id, expires_at, downloaded_at, order_items(products(file_path, name))')
+      .select('id, expires_at, downloaded_at, order_items(products(file_path, name), orders(status))')
       .eq('download_token', token)
       .maybeSingle()
 
@@ -52,6 +54,9 @@ Deno.serve(async (req) => {
     }
     if (!download) {
       return json({ error: 'リンクが無効です' }, 404)
+    }
+    if (download.order_items?.orders?.status !== 'paid') {
+      return json({ error: 'この注文は返金済みのため、ダウンロードできません' }, 403)
     }
     if (new Date(download.expires_at).getTime() < Date.now()) {
       return json({ error: 'ダウンロード期限が切れています' }, 403)

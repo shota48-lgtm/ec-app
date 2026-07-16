@@ -8,6 +8,8 @@
 // とは異なり、この関数はログイン状態に依存する設計)。
 //
 // renewal_countが3以上の場合は再発行を拒否する。
+// 紐づく注文のstatusがpaid以外(返金済み等)の場合も再発行を拒否する
+// (返金後に購入者が期限を自己延長してダウンロードを復活させる抜け道を防ぐ)。
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 
@@ -65,7 +67,7 @@ Deno.serve(async (req) => {
 
     const { data: download, error: downloadError } = await supabaseAdmin
       .from('downloads')
-      .select('id, renewal_count, order_items(orders(user_id))')
+      .select('id, renewal_count, order_items(orders(user_id, status))')
       .eq('download_token', token)
       .maybeSingle()
 
@@ -79,6 +81,10 @@ Deno.serve(async (req) => {
     const ownerId = download.order_items?.orders?.user_id
     if (ownerId !== user.id) {
       return json({ error: 'この操作は許可されていません' }, 403)
+    }
+
+    if (download.order_items?.orders?.status !== 'paid') {
+      return json({ error: 'この注文は返金済みのため、再発行できません' }, 403)
     }
 
     if (download.renewal_count >= MAX_RENEWALS) {
