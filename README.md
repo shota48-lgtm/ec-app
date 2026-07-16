@@ -2,6 +2,8 @@
 
 デジタルコンテンツ（PDF・画像・音声等）を販売するミニECサイトです。クラウドワークス等での受託案件を見据え、決済フロー（カート→Stripe Checkout→Webhookによる注文確定→ダウンロード配信）を一通り実装するポートフォリオとして開発しています。
 
+**本番URL**: https://ec-app-seven.vercel.app
+
 ## プロジェクト概要
 
 - 販売対象はデジタルコンテンツに限定し、在庫管理という別ドメインを持ち込まずに決済フローの実装に集中する構成にしています
@@ -51,9 +53,11 @@
    | `VITE_SUPABASE_URL` | SupabaseプロジェクトのURL |
    | `VITE_SUPABASE_ANON_KEY` | Supabaseプロジェクトのanon key |
 
+3. Stripe関連シークレットの設定
+
    Stripe関連のシークレット（`STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`）はフロントエンドの`.env`ではなく、Supabase Edge Functions側のsecretとして別途設定します（`npx supabase secrets set` 等）。実際の値は本リポジトリには含まれません。
 
-3. 開発サーバーの起動
+4. 開発サーバーの起動
 
    ```bash
    npm run dev
