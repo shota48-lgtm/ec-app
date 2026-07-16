@@ -17,7 +17,7 @@
   - Auth（会員ログイン・管理者ログイン）
   - Edge Functions（Deno、決済セッション作成・Webhook受信・署名URL発行）
   - Storage（商品画像・商品ファイル本体の保存）
-- **決済**: Stripe Checkout（test mode）
+- **決済**: Stripe Checkout（test mode）、Stripe Refund API（返金処理）
 
 ## 主な機能
 
@@ -25,7 +25,9 @@
 - カート（複数商品・数量変更、ローカル永続化）
 - 決済（Stripe Checkout Session、複数商品対応）
 - Webhook経由の注文確定（署名検証・冪等性処理付き）
-- デジタルコンテンツのダウンロード配信（決済確定後に発行される期限付き署名URL経由）
+- デジタルコンテンツのダウンロード配信（決済確定後に発行される期限付き署名URL経由。期限切れ時は購入者自身でダウンロード期限のセルフ再発行が可能、上限あり）
+- 注文履歴ページ（会員本人の注文一覧・ステータス確認・ダウンロード導線）
+- 返金機能（管理画面からStripe Refund APIを実行し、返金確定後はダウンロード権利を即時失効）
 - 会員ログイン／管理者ログイン（ロールベースのアクセス制御）
 
 ## セットアップ手順
@@ -61,12 +63,12 @@
 
 ```
 src/
-  pages/            画面コンポーネント（商品一覧・詳細・カート・決済完了・ログイン等）
-  pages/admin/       管理者用画面（商品CRUD・管理者ログイン）
-  components/        共通コンポーネント（管理者アクセスガード等）
+  pages/            画面コンポーネント（商品一覧・詳細・カート・決済完了・注文履歴・ログイン等）
+  pages/admin/       管理者用画面（商品CRUD・注文管理/返金・管理者ログイン）
+  components/        共通コンポーネント（会員/管理者アクセスガード等）
   contexts/          React Context（カート状態管理）
-  lib/               Supabaseクライアント・APIラッパー（商品・決済・ダウンロード等）
+  lib/               Supabaseクライアント・APIラッパー（商品・決済・注文・ダウンロード等）
 supabase/
   migrations/        DBスキーマ・Storageバケット作成のSQLマイグレーション
-  functions/         Edge Functions（決済セッション作成・Webhook受信・署名URL発行等）
+  functions/         Edge Functions（決済セッション作成・Webhook受信・署名URL発行・ダウンロード再発行・返金処理等）
 ```
