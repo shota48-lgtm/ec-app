@@ -45,8 +45,21 @@
 ## 未確定
 - 返金の粒度は全額返金のみ対応（D-023）。部分返金（数量・金額指定）が必要になった場合は別途設計が必要
 
+## 本番デプロイ(Vercel)
+- 本番URL: https://ec-app-seven.vercel.app
+- Vercelプロジェクト: shota48-lgtms-projects/ec-app(GitHub連携、mainブランチ自動デプロイ)
+- 環境変数(Vercel Environment Variables、Production/Preview)に以下を登録済み:
+  - VITE_SUPABASE_URL
+  - VITE_SUPABASE_ANON_KEY
+  - VITE_STRIPE_PUBLISHABLE_KEY
+- vercel.json追加(コミット630f19a): SPA(react-router-dom BrowserRouter)の直接アクセス404対策のrewrites設定。Stripe決済完了後の/checkout/successリダイレクトで顕在化した不具合
+- git commitのuser.emailをGitHubアカウント登録メール(shota.48@icloud.com)に統一(コミットf3830e5以降)。以前はruua.48@gmail.com(GitHub未登録)で運用しており、Vercelのcommit email検証でデプロイがブロックされる事象が発生した
+- Stripe Webhookは既存のエンドポイント(upbeat-splendor)が本番URLを向いた状態で稼働中、新規設定は不要だった
+- 2026-07-16、本番環境で購入フロー通しテスト実施・成功(カート→チェックアウト→Stripe決済→注文確定→ダウンロード権利発行まで確認)
+
 ## 今後の検討
 - supabase/functions/get-download-url/index.tsのselectがproducts(file_path, name)を取得しているが、実際に使用しているのはfile_pathのみでnameは未使用（今回のorder_items.product_nameスナップショット対応のスコープ外として記録のみ、削除・修正は未実施）
+- リポジトリは現在private。ポートフォリオとして外部に見せる場合はpublic化 or Collaborator招待 or URL共有のみ、いずれかの方針決定が必要(未着手)
 
 ## 変更ログ
 - 2026-07-14: 仕様確定（D-001〜D-009）、プロジェクト初期化
