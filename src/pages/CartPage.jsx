@@ -101,7 +101,7 @@ function CartPage() {
               >
                 <div className="flex-1 min-w-[140px]">
                   <p className="text-[var(--text-h)] font-medium truncate">{product.name}</p>
-                  <p className="text-muted">単価 {product.price}円</p>
+                  <p className="text-muted">単価 {product.price.toLocaleString()}円</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -119,7 +119,7 @@ function CartPage() {
                   </button>
                 </div>
                 <p className="w-20 text-right font-bold text-[var(--accent)]">
-                  {product.price * item.quantity}円
+                  {(product.price * item.quantity).toLocaleString()}円
                 </p>
                 <button className="btn-text" onClick={() => removeFromCart(item.productId)}>
                   削除
@@ -131,7 +131,7 @@ function CartPage() {
       )}
       <div className="card p-4 mt-6 flex flex-wrap items-center justify-between gap-4">
         <p className="text-lg">
-          合計: <span className="font-bold text-[var(--accent)]">{total}円</span>
+          合計: <span className="font-bold text-[var(--accent)]">{total.toLocaleString()}円</span>
         </p>
         <button
           type="button"
