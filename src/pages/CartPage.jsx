@@ -86,7 +86,12 @@ function CartPage() {
       )}
       {loading && <p className="text-muted">読み込み中...</p>}
       {!loading && items.length === 0 && (
-        <p className="text-muted">カートは空です</p>
+        <div className="cart-empty">
+          <p className="cart-empty__text">カートは空です</p>
+          <Link to="/" className="btn-outline no-underline">
+            商品を見る
+          </Link>
+        </div>
       )}
       {!loading && items.length > 0 && (
         <ul className="flex flex-col gap-3 list-none p-0 m-0">
@@ -99,6 +104,13 @@ function CartPage() {
                 key={item.productId}
                 className="card flex flex-wrap items-center gap-4 p-4"
               >
+                <div className="cart-thumb">
+                  {product.image_url ? (
+                    <img src={product.image_url} alt="" />
+                  ) : (
+                    <span className="cart-thumb__none">画像なし</span>
+                  )}
+                </div>
                 <div className="flex-1 min-w-[140px]">
                   <p className="text-[var(--text-h)] font-medium truncate">{product.name}</p>
                   <p className="text-muted">単価 {product.price.toLocaleString()}円</p>
@@ -129,18 +141,35 @@ function CartPage() {
           })}
         </ul>
       )}
-      <div className="card p-4 mt-6 flex flex-wrap items-center justify-between gap-4">
-        <p className="text-lg">
-          合計: <span className="font-bold text-[var(--accent)]">{total.toLocaleString()}円</span>
-        </p>
+      <div className="cart-summary">
+        <dl className="cart-summary__rows">
+          <div className="cart-summary__row">
+            <dt>商品の小計</dt>
+            <dd>{total.toLocaleString()}円</dd>
+          </div>
+          <div className="cart-summary__row">
+            <dt>送料</dt>
+            <dd className="cart-summary__free">なし（ダウンロード商品）</dd>
+          </div>
+          <div className="cart-summary__row cart-summary__row--total">
+            <dt>お支払い金額</dt>
+            <dd>{total.toLocaleString()}円</dd>
+          </div>
+        </dl>
         <button
           type="button"
-          className="btn-primary"
+          className="btn-primary cart-summary__cta"
           onClick={handleCheckout}
           disabled={items.length === 0 || checkingOut}
         >
           {checkingOut ? '処理中...' : 'レジに進む'}
         </button>
+        <p className="cart-summary__note">
+          決済はStripeの画面で行います。カード情報は当店を経由しません。
+        </p>
+        <Link to="/" className="cart-summary__back no-underline">
+          買い物を続ける
+        </Link>
       </div>
     </div>
   )

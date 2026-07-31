@@ -425,3 +425,118 @@ code {
     font-size: 20px;
   }
 }
+
+/* ===== カート画面 ===== */
+
+.cart-thumb {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cart-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cart-thumb__none {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.cart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 40px 0 8px;
+}
+.cart-empty__text {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.cart-summary {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 20px 18px;
+  margin-top: 24px;
+  max-width: 400px;
+  margin-left: auto;
+}
+.cart-summary__rows {
+  margin: 0 0 16px;
+}
+.cart-summary__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 0;
+  font-size: 14px;
+}
+.cart-summary__row dt {
+  color: var(--text);
+}
+.cart-summary__row dd {
+  margin: 0;
+  color: var(--text-h);
+  font-weight: 500;
+}
+.cart-summary__free {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.cart-summary__row--total {
+  border-top: 1px solid var(--border);
+  margin-top: 6px;
+  padding-top: 14px;
+}
+.cart-summary__row--total dt {
+  font-weight: 700;
+  color: var(--text-h);
+}
+.cart-summary__row--total dd {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.cart-summary__cta {
+  width: 100%;
+}
+.cart-summary__note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 170%;
+}
+.cart-summary__back {
+  display: block;
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text);
+}
+.cart-summary__back:hover {
+  color: var(--text-h);
+}
+
+@media (max-width: 520px) {
+  .cart-summary {
+    max-width: none;
+  }
+  .cart-thumb {
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+  }
+}
