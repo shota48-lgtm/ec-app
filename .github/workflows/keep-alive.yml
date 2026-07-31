@@ -10,12 +10,46 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Supabase REST API
+        env:
+          RAW_URL: ${{ secrets.SUPABASE_URL }}
+          RAW_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
+          set +e
+          URL=$(printf '%s' "$RAW_URL" | tr -d '[:space:]')
+          KEY=$(printf '%s' "$RAW_KEY" | tr -d '[:space:]')
+
+          echo "URL length after trim: ${#URL}"
+          echo "KEY length after trim: ${#KEY}"
+
+          case "$URL" in
+            https://*.supabase.co)
+              echo "URL format: OK"
+              ;;
+            *)
+              echo "URL format: NG"
+              echo "Expected form is https://xxxxxxxx.supabase.co"
+              exit 1
+              ;;
+          esac
+
+          if [ "${#KEY}" -lt 100 ]; then
+            echo "KEY looks too short. Check the secret SUPABASE_ANON_KEY."
+            exit 1
+          fi
+
           CODE=$(curl -s -o /tmp/body.txt -w "%{http_code}" \
-            "${{ secrets.SUPABASE_URL }}/rest/v1/products?select=id&limit=1" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+            "$URL/rest/v1/products?select=id&limit=1" \
+            -H "apikey: $KEY" \
+            -H "Authorization: Bearer $KEY")
+          CURL_EXIT=$?
+
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "curl failed with exit code $CURL_EXIT"
+            exit 1
+          fi
+
           echo "HTTP status: $CODE"
+
           if [ "$CODE" = "200" ]; then
             echo "OK: Supabase is awake."
             exit 0
