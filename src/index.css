@@ -390,3 +390,38 @@ code {
   content: '✓';
   font-size: 13px;
 }
+
+/* ===== キャッチコピーの帯 ===== */
+
+.hero {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 28px 26px;
+  margin: 0 0 40px;
+}
+.hero__title {
+  margin: 0 0 8px;
+  font-family: var(--heading);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-h);
+  letter-spacing: -0.3px;
+  line-height: 140%;
+}
+.hero__lead {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 180%;
+}
+
+@media (max-width: 520px) {
+  .hero {
+    padding: 22px 20px;
+    margin-bottom: 28px;
+  }
+  .hero__title {
+    font-size: 20px;
+  }
+}

@@ -41,6 +41,12 @@ function ProductListPage() {
 
   return (
     <div>
+      <section className="hero">
+        <p className="hero__title">すぐ使える写真素材</p>
+        <p className="hero__lead">
+          商用利用可・クレジット表記は不要です。購入後すぐにダウンロードできます。
+        </p>
+      </section>
       <div className="page-head">
         <h1>商品一覧</h1>
         {!loading && !error && products.length > 0 && (
