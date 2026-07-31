@@ -7,9 +7,9 @@
   --text-h: #1A1A18;
   --bg: #fff;
   --bg-subtle: #FAFAF8;
-  --border: #E8E6E1;
+  --border: #DFDCD4;
   --code-bg: #f4f3ec;
-  --accent: #1A1A18;
+  --accent: #141412;
   --accent-hover: #33322E;
   --accent-bg: rgba(26, 26, 24, 0.06);
   --accent-border: rgba(26, 26, 24, 0.30);
@@ -27,7 +27,7 @@
   letter-spacing: 0.02em;
   color-scheme: light;
   color: var(--text);
-  background: var(--bg);
+  background: var(--bg-subtle);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
