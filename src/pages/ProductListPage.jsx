@@ -26,7 +26,12 @@ function ProductListPage() {
 
   return (
     <div>
-      <h1>商品一覧</h1>
+      <div className="page-head">
+        <h1>商品一覧</h1>
+        {!loading && !error && products.length > 0 && (
+          <p className="page-count">{products.length}件の商品</p>
+        )}
+      </div>
       {error && (
         <p role="alert" className="text-[var(--danger)] mb-4">
           {error}
@@ -36,29 +41,26 @@ function ProductListPage() {
       {!loading && !error && products.length === 0 && (
         <p className="text-muted">現在販売中の商品はありません</p>
       )}
-      <ul className="grid grid-cols-2 sm:grid-cols-3 gap-4 list-none p-0 m-0">
+      <ul className="product-grid">
         {products.map((product) => (
-          <li key={product.id} className="card flex flex-col overflow-hidden">
-            <Link to={`/products/${product.id}`} className="no-underline text-inherit">
-              <div className="aspect-square bg-[var(--bg-subtle)] flex items-center justify-center">
+          <li key={product.id} className="product-card">
+            <Link to={`/products/${product.id}`} className="product-card__link">
+              <div className="product-card__media">
                 {product.image_url ? (
-                  <img
-                    src={product.image_url}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={product.image_url} alt="" />
                 ) : (
-                  <span className="text-muted">画像なし</span>
+                  <span className="product-card__noimage">画像なし</span>
                 )}
               </div>
-              <div className="p-3">
-                <p className="text-[var(--text-h)] font-medium text-sm mb-1 truncate">
-                  {product.name}
+              <div className="product-card__body">
+                <p className="product-card__name">{product.name}</p>
+                <p className="product-card__price">
+                  {Number(product.price).toLocaleString()}
+                  <span className="yen">円</span>
                 </p>
-                <p className="text-[var(--accent)] font-bold">{product.price}円</p>
               </div>
             </Link>
-            <div className="px-3 pb-3 mt-auto">
+            <div className="product-card__actions">
               <button className="btn-primary w-full" onClick={() => addToCart(product.id, 1)}>
                 カートに追加
               </button>
