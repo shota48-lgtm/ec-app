@@ -368,3 +368,25 @@ code {
     display: none;
   }
 }
+
+/* ===== カート追加の反応 ===== */
+
+.btn-added {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  background: var(--bg-subtle);
+  color: var(--text-h);
+  font-weight: 500;
+  font-size: 15px;
+  border: 1px solid var(--text-h);
+  border-radius: 8px;
+  padding: 9px 20px;
+  cursor: default;
+}
+.btn-added::before {
+  content: '✓';
+  font-size: 13px;
+}

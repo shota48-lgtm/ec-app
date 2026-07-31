@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getActiveProducts } from '../lib/products'
 import { useCart } from '../contexts/CartContext'
@@ -7,7 +7,9 @@ function ProductListPage() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [addedId, setAddedId] = useState(null)
   const { addToCart } = useCart()
+  const timerRef = useRef(null)
 
   useEffect(() => {
     async function load() {
@@ -23,6 +25,19 @@ function ProductListPage() {
 
     load()
   }, [])
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
+
+  function handleAdd(productId) {
+    addToCart(productId, 1)
+    setAddedId(productId)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setAddedId(null), 1600)
+  }
 
   return (
     <div>
@@ -61,9 +76,18 @@ function ProductListPage() {
               </div>
             </Link>
             <div className="product-card__actions">
-              <button className="btn-primary w-full" onClick={() => addToCart(product.id, 1)}>
-                カートに追加
-              </button>
+              {addedId === product.id ? (
+                <span className="btn-added" role="status">
+                  カートに追加しました
+                </span>
+              ) : (
+                <button
+                  className="btn-primary w-full"
+                  onClick={() => handleAdd(product.id)}
+                >
+                  カートに追加
+                </button>
+              )}
             </div>
           </li>
         ))}
