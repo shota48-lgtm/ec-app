@@ -41,8 +41,9 @@ function Header() {
   return (
     <header className="sticky top-0 z-10 bg-[var(--bg)] border-b border-[var(--border)]">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link to="/" className="font-bold text-[var(--text-h)] no-underline text-base">
-          ec-app
+        <Link to="/" className="site-logo">
+          <span className="site-logo__name">Pixel Stock</span>
+          <span className="site-logo__tag">デジタル素材ストア</span>
         </Link>
         <div className="flex items-center gap-4">
           {isLoggedIn && (
@@ -105,6 +106,25 @@ function App() {
           />
         </Routes>
       </main>
+      <footer className="site-footer">
+        <div className="site-footer__inner">
+          <div>
+            <p className="site-footer__name">Pixel Stock</p>
+            <p className="site-footer__links">
+              <span>特定商取引法に基づく表記</span>
+              <span className="site-footer__sep">・</span>
+              <span>プライバシーポリシー</span>
+              <span className="site-footer__sep">・</span>
+              <span>利用規約</span>
+            </p>
+          </div>
+          <div className="site-footer__pay">
+            <span className="site-footer__card">VISA</span>
+            <span className="site-footer__card">Mastercard</span>
+            <span className="site-footer__card">JCB</span>
+          </div>
+        </div>
+      </footer>
     </>
   )
 }

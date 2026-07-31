@@ -296,3 +296,75 @@ code {
     transform: none;
   }
 }
+
+/* ===== ヘッダーのロゴ ===== */
+
+.site-logo {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  text-decoration: none;
+}
+.site-logo__name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-h);
+  letter-spacing: -0.2px;
+}
+.site-logo__tag {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+/* ===== フッター ===== */
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  margin-top: 64px;
+}
+.site-footer__inner {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 24px 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.site-footer__name {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+.site-footer__links {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.9;
+}
+.site-footer__sep {
+  margin: 0 8px;
+}
+.site-footer__pay {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.site-footer__card {
+  font-size: 11px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .site-logo__tag {
+    display: none;
+  }
+}
