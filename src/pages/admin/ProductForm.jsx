@@ -6,6 +6,7 @@ import { uploadProductFile, uploadProductImage } from '../../lib/storage'
 const emptyForm = {
   name: '',
   description: '',
+  format: '',
   price: '',
   file_path: '',
   image_url: '',
@@ -95,6 +96,7 @@ function ProductForm() {
     const payload = {
       name: form.name,
       description: form.description,
+      format: form.format,
       price,
       file_path: form.file_path,
       image_url: form.image_url,
@@ -140,6 +142,19 @@ function ProductForm() {
             onChange={(e) => handleChange('description', e.target.value)}
             className="form-input"
             rows={4}
+          />
+        </div>
+        <div>
+          <label className="form-label" htmlFor="product-format">
+            形式
+          </label>
+          <input
+            id="product-format"
+            type="text"
+            value={form.format}
+            onChange={(e) => handleChange('format', e.target.value)}
+            placeholder="JPEG / 高解像度"
+            className="form-input"
           />
         </div>
         <div>

@@ -75,6 +75,9 @@ function ProductListPage() {
               </div>
               <div className="product-card__body">
                 <p className="product-card__name">{product.name}</p>
+                {product.format && (
+                  <p className="product-card__format">{product.format}</p>
+                )}
                 <p className="product-card__price">
                   {Number(product.price).toLocaleString()}
                   <span className="yen">円</span>
