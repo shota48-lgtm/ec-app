@@ -32,6 +32,7 @@ function ProductForm() {
         setForm({
           name: product.name ?? '',
           description: product.description ?? '',
+          format: product.format ?? '',
           price: String(product.price ?? ''),
           file_path: product.file_path ?? '',
           image_url: product.image_url ?? '',
