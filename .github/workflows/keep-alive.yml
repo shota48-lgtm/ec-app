@@ -7,6 +7,8 @@ on:
 
 jobs:
   ping:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Ping Supabase REST API
@@ -61,3 +63,24 @@ jobs:
             cat /tmp/body.txt
             exit 1
           fi
+      - name: Keep repository active
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Touch heartbeat file if inactive
+        run: |
+          LAST=$(git log -1 --format=%ct)
+          NOW=$(date +%s)
+          DAYS=$(( (NOW - LAST) / 86400 ))
+          echo "Days since last commit: $DAYS"
+          if [ "$DAYS" -lt 41 ]; then
+            echo "Recent enough. Nothing to do."
+            exit 0
+          fi
+          mkdir -p .github
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/heartbeat
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/heartbeat
+          git commit -m "chore: keep scheduled workflows alive"
+          git push
