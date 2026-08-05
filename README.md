@@ -76,3 +76,8 @@ supabase/
   migrations/        DBスキーマ・Storageバケット作成のSQLマイグレーション
   functions/         Edge Functions（決済セッション作成・Webhook受信・署名URL発行・ダウンロード再発行・返金処理等）
 ```
+
+
+## ライセンス
+
+MIT（[LICENSE](LICENSE)）。Copyright (c) 2026 Shota Kikuchi
